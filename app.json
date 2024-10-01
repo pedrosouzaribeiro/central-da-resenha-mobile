@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "myList",
-    "slug": "myList",
+    "name": "Central da Resenha",
+    "slug": "Central da Resenha",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "src/assets/BALL.png",
