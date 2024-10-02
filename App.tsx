@@ -8,6 +8,7 @@ import CodeScreen from './src/pages/code';
 import ProfileEditor from './src/pages/edit';
 import MenuScreen from './src/pages/menu';
 import ProfileScreen from './src/pages/profile';
+import FieldsScreen from './src/pages/fields';
 
 const Stack = createStackNavigator();
 
@@ -31,7 +32,7 @@ function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Profile">
+      <Stack.Navigator initialRouteName="Login">
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
@@ -57,11 +58,17 @@ function App() {
           component={MenuScreen} 
           options={{ headerShown: false }} 
         />
-        <Stack.Screen 
+         <Stack.Screen 
           name="Profile" 
           component={ProfileScreen} 
           options={{ headerShown: false }} 
         />
+         <Stack.Screen 
+          name="Fields" 
+          component={FieldsScreen} 
+          options={{ headerShown: false }} 
+        />
+     
       </Stack.Navigator>
     </NavigationContainer>
   );

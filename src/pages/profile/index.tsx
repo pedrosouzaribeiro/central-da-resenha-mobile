@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import AntDesign from '@expo/vector-icons/AntDesign'; //Icones em chines? Trocar icons depois
 import axios from 'axios';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
@@ -65,7 +66,7 @@ export default function ProfileScreen() {
             <MaterialIcons name="share" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={styles.ratingContainer}>
-            <MaterialIcons name="star" size={16} color="#FFD700" />
+            <AntDesign name="star" size={16} color="#FFD700" />
             <Text style={styles.ratingText}>{userData.number}</Text>
           </View>
         </View>
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   },
   playingStyle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'thin',
     color: '#FFFFFF',
     marginBottom: 8,
   },
@@ -249,7 +250,7 @@ const styles = StyleSheet.create({
     color: '#888888',
   },
   editButton: {
-    backgroundColor: '#00FF00',
+    backgroundColor: '#4ECB71',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -258,6 +259,6 @@ const styles = StyleSheet.create({
   editButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#1D4A2A',
   },
 });
