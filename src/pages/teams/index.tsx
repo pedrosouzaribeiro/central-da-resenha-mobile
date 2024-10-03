@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Dimensions, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Shirt } from 'lucide-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
 const positions = [
-  { id: 'gk', label: 'GK', x: '50%', y: '85%' },
+  { id: 'gk', label: 'GL', x: '50%', y: '85%' },
   { id: 'zg1', label: 'ZG', x: '30%', y: '65%' },
   { id: 'zg2', label: 'ZG', x: '70%', y: '65%' },
   { id: 'ala1', label: 'ALA', x: '15%', y: '40%' },
   { id: 'ala2', label: 'ALA', x: '85%', y: '40%' },
-  { id: 'pvo', label: 'PVO', x: '50%', y: '40%' },
-  { id: 'fxo', label: 'FXO', x: '50%', y: '15%' },
+  { id: 'pvo', label: 'PIVO', x: '50%', y: '40%' },
+  { id: 'fxo', label: 'FIXO', x: '50%', y: '15%' },
 ];
 
 export default function LineupScreen() {
@@ -60,21 +60,36 @@ export default function LineupScreen() {
     >
       <View style={styles.overlay}>
         <View style={styles.header}>
-          <TextInput
-            style={styles.teamName}
-            value={homeTeam}
-            onChangeText={setHomeTeam}
-          />
-          <View style={styles.scoreContainer}>
-            <Text style={styles.score}>0</Text>
-            <Text style={styles.timer}>{timer}</Text>
+          <Text style={styles.headerTitle}>Central da Resenha</Text>
+          <MaterialCommunityIcons name="soccer" size={24} color="#4CAF50" />
+          <View style={styles.profileIcon}>
+            <MaterialCommunityIcons name="account" size={24} color="#fff" />
+          </View>
+        </View>
+        <View style={styles.scoreBoard}>
+          <View style={styles.teamContainer}>
+            <View style={styles.teamNameContainer}>
+              <TextInput
+                style={styles.teamName}
+                value={homeTeam}
+                onChangeText={setHomeTeam}
+              />
+            </View>
             <Text style={styles.score}>0</Text>
           </View>
-          <TextInput
-            style={styles.teamName}
-            value={awayTeam}
-            onChangeText={setAwayTeam}
-          />
+          <View style={styles.timerContainer}>
+            <Text style={styles.timer}>{timer}</Text>
+          </View>
+          <View style={styles.teamContainer}>
+            <Text style={styles.score}>0</Text>
+            <View style={styles.teamNameContainer}>
+              <TextInput
+                style={styles.teamName}
+                value={awayTeam}
+                onChangeText={setAwayTeam}
+              />
+            </View>
+          </View>
         </View>
         <View style={styles.field}>
           {positions.map((position) => (
@@ -86,33 +101,30 @@ export default function LineupScreen() {
               ]}
             >
               <Text style={styles.positionLabel}>{position.label}</Text>
-              <Shirt size={40} color="#4CAF50" />
-              <TouchableOpacity onPress={() => setEditingPlayer(position.id)}>
-                <Text style={styles.playerName}>
-                  {editingPlayer === position.id ? (
-                    <TextInput
-                      style={styles.nameInput}
-                      value={players[position.id] || ''}
-                      onChangeText={(text) => handlePlayerNameChange(position.id, text)}
-                      onBlur={() => setEditingPlayer(null)}
-                      autoFocus
-                    />
-                  ) : (
-                    players[position.id] || 'Jogador'
-                  )}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.playerIconBackground}>
+                <MaterialCommunityIcons name="tshirt-crew" size={24} color="#4CAF50" />
+              </View>
+              <Pressable onPress={() => setEditingPlayer(position.id)}>
+                {editingPlayer === position.id ? (
+                  <TextInput
+                    style={styles.nameInput}
+                    value={players[position.id] || ''}
+                    onChangeText={(text) => handlePlayerNameChange(position.id, text)}
+                    onBlur={() => setEditingPlayer(null)}
+                    autoFocus
+                  />
+                ) : (
+                  <Text style={styles.playerName}>
+                    {players[position.id] || 'Jogador'}
+                  </Text>
+                )}
+              </Pressable>
             </View>
           ))}
         </View>
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Adicionar jogador</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Começar jogo</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.startButton}>
+          <Text style={styles.startButtonText}>Começar jogo</Text>
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
@@ -133,20 +145,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  headerTitle: {
+    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  profileIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scoreBoard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  teamContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  teamNameContainer: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   teamName: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
-  },
-  scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   score: {
     color: '#4CAF50',
@@ -154,9 +188,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginHorizontal: 10,
   },
+  timerContainer: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+  },
   timer: {
-    color: '#4CAF50',
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   field: {
@@ -172,6 +212,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 5,
   },
+  playerIconBackground: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(128, 128, 128, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   playerName: {
     color: '#fff',
     fontSize: 14,
@@ -186,18 +234,16 @@ const styles = StyleSheet.create({
     minWidth: 80,
     textAlign: 'center',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10,
-  },
-  button: {
+  startButton: {
     backgroundColor: '#4CAF50',
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
+    margin: 10,
+    alignItems: 'center',
   },
-  buttonText: {
+  startButtonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
