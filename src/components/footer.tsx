@@ -12,13 +12,13 @@ export default function Footer() {
         <AntDesign name="pluscircleo" size={24} color="white" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.iconContainer}>
-        <MaterialCommunityIcons name="soccer-field" size={24} color="white" />
+        <MaterialCommunityIcons name="soccer-field" size={33} color="white"  />
       </TouchableOpacity>
       <TouchableOpacity style={[styles.iconContainer, styles.activeIcon, styles.bola]}>
         <Image source={{ uri: 'https://i.imgur.com/EMWvwxY.png' }} style={{ width: 40, height: 40 }} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.iconContainer}>
-        <AntDesign name="shoppingcart" size={24} color="gray" />
+        <AntDesign name="shoppingcart" size={31} color="gray" style={{marginBottom: 5}} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.iconContainer}>
         <Octicons name="bell" size={24} color="white" />
@@ -53,4 +53,5 @@ const styles = StyleSheet.create({
   bola: {
     marginTop: -50,
   }
+ 
 });

@@ -3,6 +3,8 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, TextInput,
 
 const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
+
+
 const fields = [
   { id: '1', name: 'Campo 1', image: 'https://example.com/campo1.jpg', time: '19:00 - 20:00' },
   { id: '2', name: 'Campo 2', image: 'https://example.com/campo2.jpg', time: '20:00 - 21:00' },
@@ -52,7 +54,7 @@ export default function BookingModal({ isVisible, onClose }: BookingModalProps) 
                 <Text style={styles.fieldItemName}>{field.name}</Text>
                 <Text style={styles.fieldItemTime}>{field.time}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.scheduleButton}>
-                  <Text style={styles.scheduleButtonText}>Ver Horários</Text>
+                  <Text style={styles.scheduleButtonText}>R$ 130/h</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -128,20 +130,25 @@ const styles = StyleSheet.create({
   weekDaysContainer: {
     flexDirection: 'row',
     marginBottom: 20,
+    paddingVertical: 10,
   },
   dayButton: {
     paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     marginRight: 10,
     backgroundColor: '#4ECB71',
+    borderWidth: 1,
+    
   },
   selectedDayButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#7acf92',
+    
   },
   dayButtonText: {
-    color: '#313131',
+    color: '#1D4A2A',
     fontWeight: 'bold',
+    fontSize: 14,
   },
   selectedDayButtonText: {
     color: '#1D4A2A',
@@ -198,7 +205,10 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   scheduleButtonText: {
-    color: '#FFFFFF',
+    color: '#1D4A2A',
     fontWeight: 'bold',
+    textAlign: 'center',
+    backgroundColor: '#4ECB71', //Testando caso olhar o field dnv pedro
+    borderRadius: 10,
   },
 });

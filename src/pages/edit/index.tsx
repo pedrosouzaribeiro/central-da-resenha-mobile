@@ -99,7 +99,7 @@ export default function ProfileEditor() {
 
   return (
     <View style={styles.container}>
-      <View style={{ marginBottom: 90, marginTop: -15 }}><Header /></View>
+      <View><Header /></View>
       
       <Text style={styles.title}>Editar perfil</Text>
       <View style={styles.profileImageContainer}>
@@ -210,16 +210,15 @@ export default function ProfileEditor() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-    padding: 20,
-    
+    backgroundColor: '#000',    
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 20
   },
   profileImageContainer: {
     alignItems: 'center',
@@ -281,7 +280,7 @@ const styles = StyleSheet.create({
     marginRight: 135,
     marginBottom: -20,
     marginTop: -16,
-    marginLeft: -25,
+    marginLeft: -65,
     fontWeight: 'thin',
     fontFamily: 'montserrat',
     width: 100,

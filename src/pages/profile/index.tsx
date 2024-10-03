@@ -57,7 +57,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <View style={{paddingHorizontal: 0, marginHorizontal: -20}}><Header /></View>
       <Text style={styles.title}>Seu perfil</Text>
       
       <View style={styles.profileCard}>
@@ -140,14 +140,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-    padding: 16,
+    paddingHorizontal: 17,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginVertical: 16,
+    marginTop: 10,
+    marginBottom: 20
   },
   profileCard: {
     backgroundColor: '#1C1C1E',

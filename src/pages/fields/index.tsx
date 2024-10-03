@@ -16,6 +16,11 @@ const featuredField = {
     paddingHorizontal: 10,
     marginRight: 10,
     marginBottom: 10,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
   },
   categoryTextStyle: {
     color: '#1D4A2A',
@@ -88,7 +93,7 @@ export default function FieldsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#000',
   },
   content: {
     flex: 1,
@@ -98,7 +103,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 20,
+    marginBottom: 30,
+    textAlign: 'center'
   },
   featuredField: {
     backgroundColor: '#1E1E1E',
@@ -154,6 +160,8 @@ const styles = StyleSheet.create({
     color: '#F5F5F5',
     marginLeft: 10,
     fontSize: 16,
+    marginTop: 32,
+    marginBottom: 20
   },
   fieldItem: {
     width: 200,
@@ -189,5 +197,6 @@ const styles = StyleSheet.create({
   },
   horizontalScrollView: {
     marginBottom: 20,
+    color: '#FFF',
   },
 });

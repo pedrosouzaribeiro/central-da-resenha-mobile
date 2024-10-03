@@ -15,7 +15,7 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
-      <Header />
+      <View style={{marginHorizontal: -20, marginTop: -85}}><Header /></View>
 
 
         <Text style={styles.title}>O que você quer fazer hoje?</Text>
@@ -46,15 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A2A2A',
-  },
+
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -71,8 +63,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 30,
+    marginTop: 20
   },
   menuItem: {
     flexDirection: 'row',

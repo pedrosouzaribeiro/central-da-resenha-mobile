@@ -9,6 +9,7 @@ import ProfileEditor from './src/pages/edit';
 import MenuScreen from './src/pages/menu';
 import ProfileScreen from './src/pages/profile';
 import FieldsScreen from './src/pages/fields';
+import Teams from './src/pages/teams';
 
 const Stack = createStackNavigator();
 
@@ -32,7 +33,7 @@ function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator initialRouteName="Teams">
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
@@ -68,7 +69,11 @@ function App() {
           component={FieldsScreen} 
           options={{ headerShown: false }} 
         />
-     
+        <Stack.Screen 
+          name="Teams" 
+          component={Teams} 
+          options={{ headerShown: false }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

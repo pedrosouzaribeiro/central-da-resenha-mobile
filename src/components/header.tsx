@@ -56,12 +56,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#000',
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 35,
     width: '100%',
-    position: 'absolute',
+    //position: 'absolute',
     top: 0,
     zIndex: 1,
     marginTop: 20,
+    padding: 90
   },
   backButton: {
     padding: 5,
