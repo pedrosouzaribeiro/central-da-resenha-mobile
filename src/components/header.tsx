@@ -1,29 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
-import { MaterialIcons, Octicons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Header() {
   const navigation = useNavigation();
   const [userName, setUserName] = useState('usuario');
   const [position, setPosition] = useState('');
+  const [clientId, setClientId] = useState(null); // Novo estado para armazenar o ID do cliente
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get('http://localhost:4444/api/', {
+        // Recupera o token do AsyncStorage
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          Alert.alert('Token não encontrado. Faça login novamente.');
+          return;
+        }
+
+        // Primeira requisição para obter o perfil do usuário
+        const response = await axios.get('http://192.168.2.12:3000/api/accountmanagement/profile', {
           headers: {
-            Authorization: 'Bearer seu_token_aqui', // Substitua pelo seu token
+            Authorization: `Bearer ${token}`, // Usa o token recuperado
           },
         });
-        setUserName(response.data.name || 'usuario');
-        setPosition(response.data.POSICAO || '');
+
+        // Atualiza o estado com os dados do usuário
+        setClientId(response.data.idcliente); // Armazena o ID do cliente
+        setPosition(response.data.nivelusuario || ''); // Ajuste conforme necessário
+
+        // Segunda requisição para obter o nickname usando o ID do cliente
+        if (response.data.idcliente) {
+          const profileResponse = await axios.get(`http://192.168.2.12:3000/api/accountmanagement/profile/${response.data.idcliente}`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Usa o token recuperado
+            },
+          });
+
+          // Atualiza o estado com o nickname
+          setUserName(profileResponse.data.profile.nickname || 'usuario'); // Aqui você pode ajustar para o campo que deseja exibir
+        }
       } catch (error) {
         console.error('Erro ao buscar dados do usuário:', error);
+        Alert.alert('Erro ao buscar dados do usuário. Verifique sua conexão.');
       }
     };
 
@@ -58,11 +81,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 35,
     width: '100%',
-    //position: 'absolute',
     top: 0,
     zIndex: 1,
     marginTop: 20,
-    padding: 90
   },
   backButton: {
     padding: 5,
@@ -79,13 +100,13 @@ const styles = StyleSheet.create({
     color: '#4ecb71',
   },
   profileContainer: {
-    flexDirection: 'row', // Muda para linha para alinhar o nome e o ícone horizontalmente
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end', // Alinha o conteúdo à direita
+    justifyContent: 'flex-end',
   },
   profileNameContainer: {
-    flexDirection: 'column', // Muda para coluna para alinhar o nome e a posição verticalmente
-    alignItems: 'flex-start', // Alinha o texto à esquerda
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   profileName: {
     fontFamily: 'montserrat',
@@ -100,6 +121,6 @@ const styles = StyleSheet.create({
   },
   icon: {
     color: '#f5f5f5',
-    marginLeft: 8, // Adiciona espaço entre o nome e o ícone
+    marginLeft: 8,
   },
 });

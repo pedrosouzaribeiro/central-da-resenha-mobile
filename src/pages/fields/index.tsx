@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Importando AsyncStorage
 import Footer from '../../components/footer';
 import Header from '../../components/header';
 import BookingModal from './BookingModal';
@@ -29,14 +29,55 @@ const featuredField = {
   },
 };
 
-const fields = [
-  { id: '1', name: 'Arena Society', image: 'https://example.com/arena-society.jpg' },
-  { id: '2', name: 'Cpx Esportivo Raboni', image: 'https://example.com/cpx-esportivo-raboni.jpg' },
-  { id: '3', name: 'Resenha da Bola', image: 'https://example.com/resenha-da-bola.jpg' },
-];
-
 export default function FieldsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [fieldsState, setFieldsState] = useState([]); // Estado para armazenar os campos
+  const [selectedFields, setSelectedFields] = useState(null); // Renomeado para selectedFields
+
+  useEffect(() => {
+    const fetchFields = async () => {
+      const token = await AsyncStorage.getItem('userToken'); // Obtendo o token do AsyncStorage
+      const response = await fetch('http://192.168.2.12:3000/api/home/empresas', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`, // Adicionando o token no cabeçalho
+        },
+      });
+      const data = await response.json();
+      
+      // Mapeando os dados para o formato desejado
+      const mappedFields = data.map(item => ({
+        id: item.id,
+        name: item.nome,
+        image: item.imagembanner || 'default_image_url', // Usando imagembanner ou uma imagem padrão
+        endereco: item.endereco,
+      }));
+
+      setFieldsState(mappedFields); // Atualizando o estado com os dados mapeados
+    };
+
+    fetchFields();
+  }, []); // Executa apenas uma vez ao montar o componente
+
+  const handleOpenModal = async (fieldId) => {
+    try {
+      const token = await AsyncStorage.getItem('userToken'); // Obtendo o token do AsyncStorage
+      const response = await fetch(`http://192.168.2.12:3000/api/home/campos/${fieldId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`, // Adicionando o token no cabeçalho
+        },
+      });
+      const fieldData = await response.json();
+      
+      // Garantindo que fieldData seja um array
+      const fieldsArray = Array.isArray(fieldData) ? fieldData : [fieldData];
+      setSelectedFields(fieldsArray); // Armazenando o array de campos
+      setModalVisible(true); // Abrindo o modal
+    } catch (error) {
+      console.error('Erro ao buscar dados do campo:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -46,7 +87,11 @@ export default function FieldsScreen() {
         
         <View style={styles.featuredField}>
           <View style={styles.featuredHeader}>
-            <Image source={require('../../assets/mercado.png')} style={styles.featuredLogo} />
+            <Image 
+              source={require('../../assets/mercado.png')} 
+              style={styles.featuredLogo}
+              accessibilityLabel="Logo do campo" // Adicionando label de acessibilidade
+            />
             <View>
               <Text style={styles.featuredName}>{featuredField.name}</Text>
               <Text style={styles.featuredDescription}>{featuredField.description}</Text>
@@ -56,27 +101,43 @@ export default function FieldsScreen() {
 
         <View style={styles.categoryContainer}>
           {featuredField.categories.map((category, index) => (
-            <TouchableOpacity key={index} style={featuredField.categoryStyle}>
+            <TouchableOpacity 
+              key={index} 
+              style={featuredField.categoryStyle}
+              accessibilityLabel={`Categoria ${category}`} // Adicionando label de acessibilidade
+            >
               <Text style={featuredField.categoryTextStyle}>{category}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.filterContainer}>
-          <Text style={styles.filterText}>Filtre por região: _______________________________________________</Text>
+          <Text style={styles.filterText}>
+            Filtre por região: <Text>_______________________________________________</Text>
+          </Text>
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
           style={styles.horizontalScrollView}
+          contentContainerStyle={styles.scrollViewContent} // Adicionando contentContainerStyle
         >
-          {fields.map((item) => (
+          {fieldsState.map((item) => (
             <View key={item.id} style={styles.fieldItem}>
-              <Image source={{ uri: item.image }} style={styles.fieldImage} />
+              <Image 
+                source={{ uri: item.image }} 
+                style={styles.fieldImage}
+                accessibilityLabel={`Imagem do campo ${item.name}`} // Adicionando label de acessibilidade
+              />
               <View style={styles.fieldInfo}>
                 <Text style={styles.fieldName}>{item.name}</Text>
-                <TouchableOpacity style={styles.scheduleButton} onPress={() => setModalVisible(true)}>
+                <Text style={styles.fieldAddress}>{item.endereco}</Text>
+                <TouchableOpacity 
+                  style={styles.scheduleButton} 
+                  onPress={() => handleOpenModal(item.id)}
+                  accessibilityLabel={`Ver horários de ${item.name}`} // Adicionando label de acessibilidade
+                >
                   <Text style={styles.scheduleButtonText}>Ver horários</Text>
                 </TouchableOpacity>
               </View>
@@ -85,7 +146,14 @@ export default function FieldsScreen() {
         </ScrollView>
       </ScrollView>
       <Footer />
-      <BookingModal isVisible={modalVisible} onClose={() => setModalVisible(false)} />
+      <BookingModal 
+        isVisible={modalVisible} 
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedFields(null); // Limpa os campos selecionados ao fechar
+        }} 
+        fieldData={selectedFields || []} // Garantindo que sempre seja um array
+      />
     </View>
   );
 }
@@ -197,6 +265,9 @@ const styles = StyleSheet.create({
   },
   horizontalScrollView: {
     marginBottom: 20,
-    color: '#FFF',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingRight: 20, // Adicionando padding no final do scroll
   },
 });

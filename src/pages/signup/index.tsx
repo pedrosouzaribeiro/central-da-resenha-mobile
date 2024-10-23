@@ -1,16 +1,64 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons, Octicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Component() {
   const [fullName, setFullName] = useState('');
+  const [nickname, setNickname] = useState(''); // Novo estado para nickname
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [dataNasc, setDataNasc] = useState(''); // Novo estado para data de nascimento
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigation = useNavigation();
+
+  const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('As senhas não coincidem!');
+      return;
+    }
+
+    const userData = {
+      email: email, // Certifique-se de que o email está correto
+      password: password, // A senha deve ser a que o usuário digitou
+      nivelUsuario: 1, // Padrão
+      nickname: nickname, // O nickname que o usuário digitou
+      nomeReal: fullName, // O nome completo que o usuário digitou
+      dataNasc: dataNasc, // A data de nascimento que o usuário digitou
+    };
+
+    try {
+      const response = await fetch('http://192.168.2.12:3000/api/autenticacao/registro', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData), // Converte o objeto em JSON
+      });
+
+      const textResponse = await response.text(); // Captura a resposta como texto
+      console.log('Resposta da API:', textResponse); // Log da resposta
+
+      if (response.ok) {
+        const responseData = JSON.parse(textResponse); // Supondo que a resposta seja um JSON
+        const token = responseData.token; // Extraia o token da resposta
+
+        // Armazene o token no AsyncStorage
+        await AsyncStorage.setItem('userToken', token);
+
+        // Navegue para a tela "Menu"
+        navigation.navigate('Menu'); // Certifique-se de que "Menu" é o nome correto da sua tela
+      } else {
+        Alert.alert('Erro ao registrar usuário: ' + textResponse); // Mostra a resposta de erro
+      }
+    } catch (error) {
+      console.error('Error registering user:', error);
+      Alert.alert('Erro ao registrar usuário: ' + error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -26,13 +74,25 @@ export default function Component() {
       </View>
       
       <View style={styles.inputContainer}>
-      <MaterialIcons name="person" size={24} color="#666" style={styles.inputIcon} />
+        <MaterialIcons name="person" size={24} color="#666" style={styles.inputIcon} />
         <TextInput
           style={styles.input}
           placeholder="Nome Completo"
           placeholderTextColor="#666"
           value={fullName}
           onChangeText={setFullName}
+          autoCapitalize="words"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <MaterialIcons name="person" size={24} color="#666" style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Nickname"
+          placeholderTextColor="#666"
+          value={nickname} // Novo campo para nickname
+          onChangeText={setNickname}
           autoCapitalize="words"
         />
       </View>
@@ -79,10 +139,19 @@ export default function Component() {
           <MaterialIcons name={showConfirmPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
         </TouchableOpacity>
       </View>
+
+      <View style={styles.inputContainer}>
+        <MaterialIcons name="calendar-today" size={24} color="#666" style={styles.inputIcon} />
+        <TextInput
+          style={[styles.input, { paddingLeft: 16 }]}
+          placeholder="Data de Nascimento (YYYY-MM-DD)"
+          placeholderTextColor="#666"
+          value={dataNasc} // Novo campo para data de nascimento
+          onChangeText={setDataNasc}
+        />
+      </View>
       
-      
-      
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Registrar</Text>
       </TouchableOpacity>
       
@@ -122,24 +191,6 @@ const styles = StyleSheet.create({
   eyeIcon: {
     marginRight: 10,
   },
-  codeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    marginBottom: 20,
-  },
-  codeInput: {
-    backgroundColor: '#333',
-    color: '#FFF',
-    fontSize: 24,
-    textAlign: 'center',
-    width: 40,
-    height: 40,
-    borderRadius: 5,
-  },
-  separator: {
-    width: 10,
-  },
   button: {
     backgroundColor: '#4ECB71',
     padding: 15,
@@ -151,11 +202,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#1D4A2A',
     fontSize: 18,
-    fontWeight: '800', //Colocar extrabold 
-    paddingHorizontal: 115
-  },
-  createAccount: {
-    color: '#FFFFFF',
-    fontWeight: 'thin' 
+    fontWeight: '800', // Colocar extrabold 
   },
 });

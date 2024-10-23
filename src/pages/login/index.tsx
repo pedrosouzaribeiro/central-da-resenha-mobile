@@ -1,19 +1,46 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import {MaterialIcons, Octicons} from '@expo/vector-icons';
-import Header from '../../components/header';
-import Footer from '../../components/footer';
+import { MaterialIcons } from '@expo/vector-icons';
 
-export default function Component() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
 
+  const handleLogin = async () => {
+    const userData = {
+      email,
+      password,
+      codigoVerificacao: null, // Envia null para solicitar o código de verificação
+    };
+
+    try {
+      const response = await fetch('http://192.168.2.12:3000/api/autenticacao/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        // Navega para a página "Code" e passa os dados do usuário
+        navigation.navigate('Code', { userData });
+      } else {
+        navigation.navigate('Code', { userData });
+      }
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      Alert.alert('Erro ao fazer login. Verifique sua conexão.');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* <Header /> */}
       <View style={styles.iconPlaceholder}>
         <ImageBackground
           source={require('../../assets/BALL.png')}
@@ -53,20 +80,13 @@ export default function Component() {
         </TouchableOpacity>
       </View>
       
-      <TouchableOpacity  onPress={() => navigation.navigate('Code' as never)} >
-        <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity onPress={() => navigation.navigate('Code' as never)} style={styles.button}>
+      <TouchableOpacity onPress={handleLogin} style={styles.button}>
         <Text style={styles.buttonText}>Continuar</Text>
       </TouchableOpacity>
       
       <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
         <Text style={styles.createAccount}>Criar uma conta</Text>
       </TouchableOpacity>
-
-  
-      {/* <Footer /> */}
     </View>
   );
 }
@@ -103,18 +123,6 @@ const styles = StyleSheet.create({
   eyeIcon: {
     marginRight: 10,
   },
-  eyeIconText: {
-    fontSize: 16,
-    color: '#4CAF50',
-  },
-  forgotPassword: {
-    color: '#f5f5f5',
-    marginTop: -8,
-    marginBottom: 20,
-    fontWeight: '100',
-    marginRight: 210,
-    fontFamily: 'montserrat'
-  },
   button: {
     backgroundColor: '#4ECB71',
     padding: 15,
@@ -127,11 +135,9 @@ const styles = StyleSheet.create({
     color: '#1D4A2A',
     fontSize: 18,
     fontWeight: 'bold',
-    paddingHorizontal: 115
   },
   createAccount: {
     color: '#FFFFFF',
     fontWeight: '100',
-    fontFamily: 'montserrat'
   },
 });

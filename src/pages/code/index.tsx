@@ -1,13 +1,52 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CodeScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { userData } = route.params; // Recebe os dados do usuário da tela de login
   const [code, setCode] = useState(['', '', '', '', '', '']);
 
   const handleChangeText = (text: string, index: number) => {
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
+  };
+
+  const handleVerifyCode = async () => {
+    const verificationCode = parseInt(code.join(''), 10); // Junta os dígitos do código e converte para inteiro
+    const dataToSend = {
+      email: userData.email,
+      password: userData.password,
+      codigoVerificacao: verificationCode, // Envia o código de verificação como número
+    };
+
+    try {
+      const response = await fetch('http://192.168.2.12:3000/api/autenticacao/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        // Aqui você pode armazenar o token ou redirecionar para a página Home
+        Alert.alert('Código verificado com sucesso!');
+        // Navega para a página Home e passa o token
+        navigation.navigate('Menu', { token: responseData.token });
+        await AsyncStorage.setItem('userToken', responseData.token);
+      } else {
+        Alert.alert('Erro ao verificar código: ' + responseData.message);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar código:', error);
+      Alert.alert('Erro ao verificar código. Verifique sua conexão.');
+    }
   };
 
   return (
@@ -24,10 +63,12 @@ const CodeScreen = () => {
               onChangeText={(text) => handleChangeText(text, index)}
               value={digit}
             />
-            {index === 2 && <View style={styles.separator} />}
           </React.Fragment>
         ))}
       </View>
+      <TouchableOpacity onPress={handleVerifyCode} style={styles.button}>
+        <Text style={styles.buttonText}>Verificar Código</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -63,8 +104,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 5,
   },
-  separator: {
-    width: 10,
+  button: {
+    backgroundColor: '#4ECB71',
+    padding: 15,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#1D4A2A',
+    fontWeight: 'bold',
   },
 });
 
