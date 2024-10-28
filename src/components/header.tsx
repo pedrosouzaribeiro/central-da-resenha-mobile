@@ -60,11 +60,11 @@ export default function Header() {
       </TouchableOpacity>
       <Text style={styles.title} onPress={() => navigation.navigate('Home' as never)}>Central da Resenha</Text>
       <View style={styles.profileContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('UserProfile' as never)} style={styles.profileNameContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.profileNameContainer}>
           <Text style={styles.profileName}>{userName}</Text>
           {position ? <Text style={styles.profileRole}>{position}</Text> : <Text style={styles.profileRole}>N/A</Text>}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('UserProfile' as never)}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)}>
           <FontAwesome6 name="circle-user" size={25} color="#666" style={styles.icon} />
         </TouchableOpacity>
       </View>

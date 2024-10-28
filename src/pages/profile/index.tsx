@@ -5,6 +5,7 @@ import AntDesign from '@expo/vector-icons/AntDesign'; //Icones em chines? Trocar
 import axios from 'axios';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState({
@@ -27,12 +28,39 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get('YOUR_API_ENDPOINT', {
-          headers: { Authorization: 'Bearer YOUR_TOKEN_HERE' }
+        // Buscar token do AsyncStorage
+        const token = await AsyncStorage.getItem('userToken');
+        
+        // Primeira requisição para obter dados básicos do usuário
+        const userResponse = await axios.get('http://192.168.2.16:3000/api/accountmanagement/profile', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        setUserData(response.data);
+        
+        // Buscar dados detalhados do perfil usando o idcliente
+        const profileResponse = await axios.get(`http://192.168.2.16:3000/api/accountmanagement/profile/${userResponse.data.idcliente}`);
+        
+        // Atualizar o estado com os dados do perfil
+        setUserData(prevState => ({
+          ...prevState,
+          name: profileResponse.data.profile.nomereal || '-',
+          // Mantendo os outros campos com valores padrão caso não existam na API
+          position: prevState.position,
+          number: prevState.number,
+          points: prevState.points,
+          victories: prevState.victories,
+          games: prevState.games,
+          reflexes: prevState.reflexes,
+          defense: prevState.defense,
+          kickingPower: prevState.kickingPower,
+          physical: prevState.physical,
+          playingStyle: prevState.playingStyle,
+          styleRating: prevState.styleRating,
+          location: prevState.location,
+          subLocation: prevState.subLocation
+        }));
+
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Erro ao buscar dados do usuário:', error);
       }
     };
 
