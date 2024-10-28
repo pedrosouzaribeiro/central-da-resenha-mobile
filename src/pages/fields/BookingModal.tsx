@@ -80,7 +80,7 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
 
       console.log('Dados do Agendamento:', bookingData); // Log do objeto de agendamento
 
-      const response = await fetch('http://192.168.2.12:3000/api/schedule/agendar', {
+      const response = await fetch('http://192.168.2.16:3000/api/schedule/agendar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
