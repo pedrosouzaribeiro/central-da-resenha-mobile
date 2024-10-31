@@ -37,7 +37,7 @@ export default function FieldsScreen() {
   useEffect(() => {
     const fetchFields = async () => {
       const token = await AsyncStorage.getItem('userToken'); // Obtendo o token do AsyncStorage
-      const response = await fetch('http://192.168.2.16:3000/api/home/empresas', {
+      const response = await fetch('http://192.168.56.1:3000/api/home/empresas', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`, // Adicionando o token no cabeçalho
@@ -62,7 +62,7 @@ export default function FieldsScreen() {
   const handleOpenModal = async (fieldId) => {
     try {
       const token = await AsyncStorage.getItem('userToken'); // Obtendo o token do AsyncStorage
-      const response = await fetch(`http://192.168.2.16:3000/api/home/campos/${fieldId}`, {
+      const response = await fetch(`http://192.168.56.1:3000/api/home/campos/${fieldId}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`, // Adicionando o token no cabeçalho

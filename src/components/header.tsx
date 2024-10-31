@@ -23,7 +23,7 @@ export default function Header() {
         }
 
         // Primeira requisição para obter o perfil do usuário
-        const response = await axios.get('http://192.168.2.16:3000/api/accountmanagement/profile', {
+        const response = await axios.get('http://192.168.56.1:3000/api/accountmanagement/profile', {
           headers: {
             Authorization: `Bearer ${token}`, // Usa o token recuperado
           },
@@ -35,7 +35,7 @@ export default function Header() {
 
         // Segunda requisição para obter o nickname usando o ID do cliente
         if (response.data.idcliente) {
-          const profileResponse = await axios.get(`http://192.168.2.16:3000/api/accountmanagement/profile/${response.data.idcliente}`, {
+          const profileResponse = await axios.get(`http://192.168.56.1:3000/api/accountmanagement/profile/${response.data.idcliente}`, {
             headers: {
               Authorization: `Bearer ${token}`, // Usa o token recuperado
             },

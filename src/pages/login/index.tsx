@@ -17,7 +17,7 @@ export default function Login() {
     };
 
     try {
-      const response = await fetch('http://192.168.2.16:3000/api/autenticacao/login', {
+      const response = await fetch('http://192.168.56.1:3000/api/autenticacao/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

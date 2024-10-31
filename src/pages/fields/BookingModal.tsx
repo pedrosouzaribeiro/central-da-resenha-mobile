@@ -80,7 +80,7 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
 
       console.log('Dados do Agendamento:', bookingData); // Log do objeto de agendamento
 
-      const response = await fetch('http://192.168.2.16:3000/api/schedule/agendar', {
+      const response = await fetch('http://192.168.56.1:3000/api/schedule/agendar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +170,8 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
 
       <ScrollView 
         horizontal 
-        showsHorizontalScrollIndicator={false} 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.weekDaysContentContainer}
         style={styles.weekDaysContainer}
       >
         {weekDays.map((day) => (
@@ -269,18 +270,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   weekDaysContainer: {
-    flexDirection: 'row',
     marginBottom: 20,
     paddingVertical: 10,
+    width: '100%',
+  },
+  weekDaysContentContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+    width: '100%',
   },
   dayButton: {
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 20,
-    marginRight: 10,
+    marginHorizontal: 5,
     backgroundColor: '#4ECB71',
     borderWidth: 1,
-    
+    alignItems: 'center',
   },
   selectedDayButton: {
     backgroundColor: '#7acf92',
@@ -290,6 +298,7 @@ const styles = StyleSheet.create({
     color: '#1D4A2A',
     fontWeight: 'bold',
     fontSize: 14,
+    textAlign: 'center',
   },
   selectedDayButtonText: {
     color: '#1D4A2A',
@@ -408,8 +417,10 @@ const styles = StyleSheet.create({
     color: '#4ECB71',
   },
   backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 15,
+    position: 'absolute',
+    left: 20,
+    top: 10,
+    zIndex: 1,
   },
   backButtonText: {
     color: '#4ECB71',
@@ -417,6 +428,7 @@ const styles = StyleSheet.create({
   },
   bookingFormContainer: {
     width: '100%',
+    paddingTop: 40,
   },
   selectedHorarioButton: {
     backgroundColor: '#4ECB71',

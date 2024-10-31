@@ -6,8 +6,11 @@ import axios from 'axios';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();
+
   const [userData, setUserData] = useState({
     name: '-',
     position: '-',
@@ -32,31 +35,44 @@ export default function ProfileScreen() {
         const token = await AsyncStorage.getItem('userToken');
         
         // Primeira requisição para obter dados básicos do usuário
-        const userResponse = await axios.get('http://192.168.2.16:3000/api/accountmanagement/profile', {
+        const userResponse = await axios.get('http://192.168.56.1:3000/api/accountmanagement/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Buscar dados detalhados do perfil usando o idcliente
-        const profileResponse = await axios.get(`http://192.168.2.16:3000/api/accountmanagement/profile/${userResponse.data.idcliente}`);
+        const profileResponse = await axios.get(`http://192.168.56.1:3000/api/accountmanagement/profile/${userResponse.data.idcliente}`);
+        
+        // Função para capitalizar a primeira letra
+        const capitalize = (str) => {
+          if (!str) return '-';
+          return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        };
+        
+        // Função específica para capitalizar nomes próprios
+        const capitalizeName = (str) => {
+          if (!str) return '-';
+          return str.split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+        };
         
         // Atualizar o estado com os dados do perfil
         setUserData(prevState => ({
           ...prevState,
-          name: profileResponse.data.profile.nomereal || '-',
-          // Mantendo os outros campos com valores padrão caso não existam na API
-          position: prevState.position,
-          number: prevState.number,
-          points: prevState.points,
-          victories: prevState.victories,
-          games: prevState.games,
-          reflexes: prevState.reflexes,
-          defense: prevState.defense,
-          kickingPower: prevState.kickingPower,
-          physical: prevState.physical,
-          playingStyle: prevState.playingStyle,
-          styleRating: prevState.styleRating,
-          location: prevState.location,
-          subLocation: prevState.subLocation
+          name: capitalizeName(profileResponse.data.profile.nomereal) || '-',
+          position: capitalize(profileResponse.data.profile.posicao) || '-',
+          number: profileResponse.data.profile.numeropreferido?.toString() || '-',
+          points: profileResponse.data.profile.pontos?.toString() || '-',
+          victories: profileResponse.data.profile.vitorias?.toString() || '-',
+          games: profileResponse.data.profile.jogos?.toString() || '-',
+          reflexes: profileResponse.data.profile.reflexos?.toString() || '-',
+          defense: profileResponse.data.profile.defesa?.toString() || '-',
+          kickingPower: profileResponse.data.profile.forca?.toString() || '-',
+          physical: profileResponse.data.profile.fisico?.toString() || '-',
+          playingStyle: capitalize(profileResponse.data.profile.estilo) || '-',
+          styleRating: profileResponse.data.profile.estrelas || 0,
+          location: capitalize(profileResponse.data.profile.cidadeestado) || '-',
+          subLocation: capitalize(profileResponse.data.profile.bairro) || '-'
         }));
 
       } catch (error) {
@@ -72,7 +88,7 @@ export default function ProfileScreen() {
       <MaterialIcons
         key={i}
         name={i < rating ? 'star' : 'star-border'}
-        size={16}
+        size={20}
         color="#FFD700"
       />
     ));
@@ -81,6 +97,10 @@ export default function ProfileScreen() {
   const getColorForStat = (value) => {
     const numValue = Number(value);
     return numValue > 90 ? '#FFD700' : '#FFFFFF';
+  };
+
+  const handleEditProfile = () => {
+    navigation.navigate('ProfileEditor');
   };
 
   return (
@@ -155,7 +175,10 @@ export default function ProfileScreen() {
         </View>
       </View>
       
-      <TouchableOpacity style={styles.editButton}>
+      <TouchableOpacity 
+        style={styles.editButton}
+        onPress={handleEditProfile}
+      >
         <Text style={styles.editButtonText}>Editar perfil</Text>
       </TouchableOpacity>
       
@@ -260,22 +283,22 @@ const styles = StyleSheet.create({
     color: '#888888',
   },
   playingStyle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'thin',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   starsContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   location: {
-    fontSize: 14,
+    fontSize: 18,
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   subLocation: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#888888',
   },
   editButton: {
@@ -289,5 +312,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1D4A2A',
+  },
+  star: {
+    fontSize: 20,
   },
 });
