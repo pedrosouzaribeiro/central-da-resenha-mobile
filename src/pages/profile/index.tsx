@@ -35,12 +35,12 @@ export default function ProfileScreen() {
         const token = await AsyncStorage.getItem('userToken');
         
         // Primeira requisição para obter dados básicos do usuário
-        const userResponse = await axios.get('http://192.168.56.1:3000/api/accountmanagement/profile', {
+        const userResponse = await axios.get('http://168.138.151.78:3000/api/accountmanagement/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Buscar dados detalhados do perfil usando o idcliente
-        const profileResponse = await axios.get(`http://192.168.56.1:3000/api/accountmanagement/profile/${userResponse.data.idcliente}`);
+        const profileResponse = await axios.get(`http://168.138.151.78:3000/api/accountmanagement/profile/${userResponse.data.idcliente}`);
         
         // Função para capitalizar a primeira letra
         const capitalize = (str) => {

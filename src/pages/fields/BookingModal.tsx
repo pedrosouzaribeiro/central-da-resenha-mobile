@@ -1,131 +1,133 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, TextInput, Modal, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react'
+import { 
+  View, 
+  Text, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView, 
+  TextInput, 
+  Modal, 
+  Alert,
+  Dimensions,
+  Animated
+} from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ChevronLeft, X } from 'lucide-react-native'
 
-const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+const { height } = Dimensions.get('window')
+const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
 
 interface BookingModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  fieldData: any[];
+  isVisible: boolean
+  onClose: () => void
+  fieldData: any[]
 }
 
 export default function BookingModal({ isVisible, onClose, fieldData }: BookingModalProps) {
-  const [selectedDay, setSelectedDay] = useState(weekDays[0]);
-  //const [bookingName, setBookingName] = useState('');
-  const [peopleCount, setPeopleCount] = useState('');
-  const [selectedField, setSelectedField] = useState(null);
-  const [selectedHorarios, setSelectedHorarios] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState(weekDays[0])
+  const [peopleCount, setPeopleCount] = useState('')
+  const [selectedField, setSelectedField] = useState(null)
+  const [selectedHorarios, setSelectedHorarios] = useState<string[]>([])
+  const [animation] = useState(new Animated.Value(height))
+
+  useEffect(() => {
+    if (isVisible) {
+      Animated.spring(animation, {
+        toValue: height * 2/3, // Alterado de height / 2 para height * 2/3
+        useNativeDriver: false,
+      }).start()
+    } else {
+      Animated.spring(animation, {
+        toValue: height,
+        useNativeDriver: false,
+      }).start()
+    }
+  }, [isVisible])
 
   const handleFieldSelect = (field) => {
-    setSelectedField(field);
-    setSelectedHorarios([]); // Limpa horários selecionados ao trocar de campo
-  };
+    setSelectedField(field)
+    setSelectedHorarios([])
+  }
 
   const handleBack = () => {
-    setSelectedField(null);
-    setSelectedHorarios([]);
-  };
+    setSelectedField(null)
+    setSelectedHorarios([])
+  }
 
   const toggleHorarioSelection = (time: string) => {
-    setSelectedHorarios(prev => {
-      if (prev.includes(time)) {
-        return prev.filter(t => t !== time);
-      } else {
-        return [...prev, time];
-      }
-    });
-  };
+    setSelectedHorarios(prev => 
+      prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time]
+    )
+  }
 
-  // Função para pegar a data da semana atual
   const getCurrentWeek = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
 
   const handleConfirmBooking = async () => {
     try {
       if (!selectedField || selectedHorarios.length === 0 || !peopleCount) {
-        Alert.alert('Erro', 'Por favor, preencha todos os campos necessários');
-        return;
+        Alert.alert('Erro', 'Por favor, preencha todos os campos necessários')
+        return
       }
 
-      const token = await AsyncStorage.getItem('userToken');
-
-      // Verificando se o token foi recuperado corretamente
+      const token = await AsyncStorage.getItem('userToken')
       if (!token) {
-        Alert.alert('Erro', 'Token de autenticação não encontrado. Faça login novamente.');
-        return;
+        Alert.alert('Erro', 'Token de autenticação não encontrado. Faça login novamente.')
+        return
       }
-
-      // Adicionando logs para depuração
-      console.log('ID do Campo:', selectedField.id);
-      console.log('ID da Empresa:', selectedField.idEmpresa || 1);
-      console.log('Horários Selecionados:', selectedHorarios);
-      console.log('Quantidade de Pessoas:', peopleCount);
-      console.log('Data da Semana:', getCurrentWeek());
 
       const bookingData = {
         idCampo: selectedField.id,
         idEmpresa: selectedField.idEmpresa || 1,
-        horario: {
-          [selectedDay.toLowerCase()]: selectedHorarios
-        },
+        horario: { [selectedDay.toLowerCase()]: selectedHorarios },
         quantidadePessoas: parseInt(peopleCount),
         semana: getCurrentWeek()
-      };
+      }
 
-      console.log('Dados do Agendamento:', bookingData); // Log do objeto de agendamento
-
-      const response = await fetch('http://192.168.56.1:3000/api/schedule/agendar', {
+      const response = await fetch('http://168.138.151.78:3000/api/schedule/agendar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(bookingData)
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao fazer agendamento');
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Erro ao fazer agendamento')
       }
 
-      Alert.alert('Sucesso', 'Agendamento realizado com sucesso!');
-      onClose();
+      Alert.alert('Sucesso', 'Agendamento realizado com sucesso!')
+      onClose()
     } catch (error) {
-      console.error('Erro ao agendar:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível realizar o agendamento');
+      console.error('Erro ao agendar:', error)
+      Alert.alert('Erro', error.message || 'Não foi possível realizar o agendamento')
     }
-  };
+  }
 
-  // Função para renderizar os horários com seleção múltipla
   const renderHorarios = () => {
-    if (!selectedField || !selectedField.horarios || !selectedField.horarios[selectedDay.toLowerCase()]) {
-      return null;
-    }
+    if (!selectedField?.horarios?.[selectedDay.toLowerCase()]) return null
 
-    return selectedField.horarios[selectedDay.toLowerCase()].map((time: string, index: number) => (
-      <TouchableOpacity 
-        key={index} 
-        style={[
-          styles.horarioButton,
-          selectedHorarios.includes(time) && styles.selectedHorarioButton
-        ]}
-        onPress={() => toggleHorarioSelection(time)}
-      >
-        <Text style={[
-          styles.fieldItemTime,
-          selectedHorarios.includes(time) && styles.selectedHorarioText
-        ]}>
-          {time}
-        </Text>
-      </TouchableOpacity>
-    ));
-  };
+    return (
+      <View style={styles.horariosGrid}>
+        {selectedField.horarios[selectedDay.toLowerCase()].map((time: string, index: number) => (
+          <TouchableOpacity 
+            key={index} 
+            style={[styles.horarioButton, selectedHorarios.includes(time) && styles.selectedHorarioButton]}
+            onPress={() => toggleHorarioSelection(time)}
+          >
+            <Text style={[styles.horarioText, selectedHorarios.includes(time) && styles.selectedHorarioText]}>
+              {time}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    )
+  }
 
   const renderFieldsList = () => (
     <ScrollView style={styles.fieldsListContainer}>
@@ -144,21 +146,18 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
           ) : (
             <View style={styles.placeholderImage} />
           )}
-          <Text style={styles.fieldCardName}>{field.nomecampo}</Text>
-          <Text style={styles.fieldCardPrice}>R$ {field.preco?.toFixed(2)}</Text>
+          <View style={styles.fieldCardInfo}>
+            <Text style={styles.fieldCardName}>{field.nomecampo}</Text>
+            <Text style={styles.fieldCardPrice}>R$ {field.preco?.toFixed(2)}</Text>
+          </View>
         </TouchableOpacity>
       ))}
     </ScrollView>
-  );
+  )
 
   const renderBookingForm = () => (
-    <View style={styles.bookingFormContainer}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.backButtonText}>Voltar</Text>
-      </TouchableOpacity>
-
+    <ScrollView style={styles.bookingFormContainer}>
       <View style={styles.fieldHeader}>
-        <Text style={styles.fieldName}>{selectedField?.nomecampo || ''}</Text>
         {selectedField?.bannercampo && typeof selectedField.bannercampo === 'string' && selectedField.bannercampo.startsWith('http') && (
           <Image 
             source={{ uri: selectedField.bannercampo }} 
@@ -166,13 +165,14 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
             accessibilityLabel="Imagem do campo"
           />
         )}
+        <Text style={styles.fieldName}>{selectedField?.nomecampo || ''}</Text>
       </View>
 
+      <Text style={styles.sectionTitle}>Selecione o dia:</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.weekDaysContentContainer}
-        style={styles.weekDaysContainer}
+        contentContainerStyle={styles.weekDaysContainer}
       >
         {weekDays.map((day) => (
           <TouchableOpacity
@@ -187,254 +187,203 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
         ))}
       </ScrollView>
 
-      <ScrollView style={styles.horariosContainer}>
-        {renderHorarios()}
-      </ScrollView>
+      <Text style={styles.sectionTitle}>Horários disponíveis:</Text>
+      {renderHorarios()}
 
-      <View style={styles.inputsContainer}>
-        {/* <TextInput
-          style={styles.input}
-          placeholder="Nome do agendamento"
-          placeholderTextColor="#999"
-          value={bookingName}
-          onChangeText={setBookingName}
-        /> */}
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Quantidade de pessoas"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          value={peopleCount}
-          onChangeText={setPeopleCount}
-        />
-      </View>
+      <Text style={styles.sectionTitle}>Quantidade de pessoas:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Número de pessoas"
+        placeholderTextColor="#999"
+        keyboardType="numeric"
+        value={peopleCount}
+        onChangeText={setPeopleCount}
+      />
 
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmBooking}>
         <Text style={styles.confirmButtonText}>Confirmar agendamento</Text>
       </TouchableOpacity>
-    </View>
-  );
+    </ScrollView>
+  )
 
   return (
     <Modal
-      animationType="slide"
       transparent={true}
       visible={isVisible}
       onRequestClose={onClose}
+      animationType="none"
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>
-            {selectedField ? 'Agendar Horário' : 'Escolha um Campo'}
-          </Text>
+      <View style={styles.overlay} />
+      <View style={styles.modalContainer}>
+        <Animated.View style={[styles.modalContent, { height: animation }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={selectedField ? handleBack : onClose} style={styles.backButton}>
+              {selectedField ? <ChevronLeft color="#4ECB71" size={24} /> : <X color="#4ECB71" size={24} />}
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {selectedField ? 'Agendar Horário' : 'Escolha um Campo'}
+            </Text>
+          </View>
           
-          {selectedField ? renderBookingForm() : renderFieldsList()}
-        </View>
+          <View style={styles.modalBody}>
+            {selectedField ? renderBookingForm() : renderFieldsList()}
+          </View>
+        </Animated.View>
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  centeredView: {
+  modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  modalView: {
-    width: '90%',
+  modalContent: {
     backgroundColor: '#121212',
-    borderRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    minHeight: '66%', // Adicionado para garantir que o modal ocupe pelo menos 2/3 da tela
+  },
+  modalHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
+  backButton: {
+    marginRight: 16,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 5,
   },
-  fieldName: {
-    fontSize: 18,
-    color: '#AAAAAA',
-    marginBottom: 20,
-  },
-  weekDaysContainer: {
-    marginBottom: 20,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  weekDaysContentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  modalBody: {
     flex: 1,
-    width: '100%',
-  },
-  dayButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    backgroundColor: '#4ECB71',
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  selectedDayButton: {
-    backgroundColor: '#7acf92',
-    
-  },
-  dayButtonText: {
-    color: '#1D4A2A',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  selectedDayButtonText: {
-    color: '#1D4A2A',
-  },
-  fieldsContainer: {
-    marginBottom: 20,
-  },
-  fieldItem: {
-    width: 150,
-    marginRight: 15,
-    backgroundColor: '#1E1E1E',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  fieldImage: {
-    width: '100%',
-    height: 100,
-  },
-  fieldItemName: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    padding: 10,
-  },
-  fieldItemTime: {
-    color: '#AAAAAA',
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#1E1E1E',
-    color: '#FFFFFF',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  confirmButton: {
-    backgroundColor: '#4ECB71',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 14,
-    marginTop: 10,
-  },
-  confirmButtonText: {
-    color: '#1D4A2A',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  scheduleButton: {
-    backgroundColor: '#1E1E1E',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  scheduleButtonText: {
-    color: '#1D4A2A',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    backgroundColor: '#4ECB71', //Testando caso olhar o field dnv pedro
-    borderRadius: 10,
-  },
-  fieldHeader: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  horariosContainer: {
-    width: '100%',
-    maxHeight: 150,
-    marginBottom: 15,
-  },
-  horarioButton: {
-    backgroundColor: '#1E1E1E',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 8,
-    width: '100%',
-  },
-  inputsContainer: {
-    width: '100%',
-    marginBottom: 15,
   },
   fieldsListContainer: {
-    width: '100%',
-    maxHeight: '80%',
+    padding: 16,
   },
   fieldCard: {
     backgroundColor: '#1E1E1E',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    width: '100%',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
   fieldCardImage: {
     width: '100%',
     height: 150,
-    borderRadius: 8,
-    marginBottom: 10,
   },
   placeholderImage: {
     width: '100%',
     height: 150,
     backgroundColor: '#333',
-    borderRadius: 8,
-    marginBottom: 10,
+  },
+  fieldCardInfo: {
+    padding: 16,
   },
   fieldCardName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   fieldCardPrice: {
     fontSize: 16,
     color: '#4ECB71',
   },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: 10,
-    zIndex: 1,
-  },
-  backButtonText: {
-    color: '#4ECB71',
-    fontSize: 16,
-  },
   bookingFormContainer: {
+    padding: 16,
+  },
+  fieldHeader: {
+    marginBottom: 24,
+  },
+  fieldImage: {
     width: '100%',
-    paddingTop: 40,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  fieldName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    marginTop: 24,
+  },
+  weekDaysContainer: {
+    flexDirection: 'row',
+  },
+  dayButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: '#1E1E1E',
+  },
+  selectedDayButton: {
+    backgroundColor: '#4ECB71',
+  },
+  dayButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  selectedDayButtonText: {
+    color: '#1D4A2A',
+  },
+  horariosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  horarioButton: {
+    width: '48%',
+    backgroundColor: '#1E1E1E',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignItems: 'center',
   },
   selectedHorarioButton: {
     backgroundColor: '#4ECB71',
+  },
+  horarioText: {
+    color: '#FFFFFF',
   },
   selectedHorarioText: {
     color: '#1D4A2A',
     fontWeight: 'bold',
   },
-});
+  input: {
+    backgroundColor: '#1E1E1E',
+    color: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  confirmButton: {
+    backgroundColor: '#4ECB71',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 32,
+  },
+  confirmButtonText: {
+    color: '#1D4A2A',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+})

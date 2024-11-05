@@ -31,7 +31,7 @@ export default function Component() {
     };
 
     try {
-      const response = await fetch('http://192.168.56.1:3000/api/autenticacao/registro', {
+      const response = await fetch('http://168.138.151.78:3000/api/autenticacao/registro', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

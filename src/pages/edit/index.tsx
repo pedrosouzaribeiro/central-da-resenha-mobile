@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
-const API_URL = 'http://192.168.56.1:3000/api/accountmanagement';
+const API_URL = 'http://168.138.151.78:3000/api/accountmanagement';
 const TOKEN =  AsyncStorage.getItem('userToken'); // Replace with actual token
 
 export default function ProfileEditor() {

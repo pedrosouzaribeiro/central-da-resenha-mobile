@@ -24,7 +24,7 @@ const CodeScreen = () => {
     };
 
     try {
-      const response = await fetch('http://192.168.56.1:3000/api/autenticacao/login', {
+      const response = await fetch('http://168.138.151.78:3000/api/autenticacao/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
