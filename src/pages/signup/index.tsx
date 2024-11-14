@@ -1,8 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const formatDate = (text: string) => {
+  // Remove tudo que não for número
+  const numbers = text.replace(/[^\d]/g, '');
+  
+  // Aplica a máscara DD/MM/AAAA
+  if (numbers.length <= 2) return numbers;
+  if (numbers.length <= 4) return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+  return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+};
+
+const validateDate = (date: string) => {
+  const [day, month, year] = date.split('/').map(num => parseInt(num));
+  const currentYear = new Date().getFullYear();
+  
+  if (!day || !month || !year) return false;
+  if (day < 1 || day > 31) return false;
+  if (month < 1 || month > 12) return false;
+  if (year < 1900 || year > currentYear) return false;
+  
+  return true;
+};
 
 export default function Component() {
   const [fullName, setFullName] = useState('');
@@ -60,8 +82,19 @@ export default function Component() {
     }
   };
 
+  const handleDateChange = (text: string) => {
+    const formatted = formatDate(text);
+    if (formatted.length <= 10) { // Limita ao tamanho máximo DD/MM/AAAA
+      setDataNasc(formatted);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0} // Ajuste conforme necessário
+    >
       <View style={styles.iconPlaceholder}>
         <ImageBackground
           source={require('../../assets/BALL.png')}
@@ -121,7 +154,7 @@ export default function Component() {
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-          <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#4CAF50" />
+          <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
         </TouchableOpacity>
       </View>
       
@@ -144,18 +177,19 @@ export default function Component() {
         <MaterialIcons name="calendar-today" size={24} color="#666" style={styles.inputIcon} />
         <TextInput
           style={[styles.input, { paddingLeft: 16 }]}
-          placeholder="Data de Nascimento (YYYY-MM-DD)"
+          placeholder="Data de Nascimento (DD/MM/AAAA)"
           placeholderTextColor="#666"
-          value={dataNasc} // Novo campo para data de nascimento
-          onChangeText={setDataNasc}
+          value={dataNasc}
+          onChangeText={handleDateChange}
+          keyboardType="numeric"
+          maxLength={10}
         />
       </View>
       
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Registrar</Text>
       </TouchableOpacity>
-      
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

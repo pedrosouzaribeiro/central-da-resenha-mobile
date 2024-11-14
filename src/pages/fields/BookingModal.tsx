@@ -156,53 +156,57 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
   )
 
   const renderBookingForm = () => (
-    <ScrollView style={styles.bookingFormContainer}>
-      <View style={styles.fieldHeader}>
-        {selectedField?.bannercampo && typeof selectedField.bannercampo === 'string' && selectedField.bannercampo.startsWith('http') && (
-          <Image 
-            source={{ uri: selectedField.bannercampo }} 
-            style={styles.fieldImage}
-            accessibilityLabel="Imagem do campo"
-          />
-        )}
-        <Text style={styles.fieldName}>{selectedField?.nomecampo || ''}</Text>
+    <ScrollView style={styles.bookingFormContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.bookingFormContent}>
+        <View style={styles.fieldHeader}>
+          {selectedField?.bannercampo && typeof selectedField.bannercampo === 'string' && selectedField.bannercampo.startsWith('http') && (
+            <Image 
+              source={{ uri: selectedField.bannercampo }} 
+              style={styles.fieldImage}
+              accessibilityLabel="Imagem do campo"
+            />
+          )}
+          <Text style={styles.fieldName}>{selectedField?.nomecampo || ''}</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Selecione o dia:</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.weekDaysContainer}
+        >
+          {weekDays.map((day) => (
+            <TouchableOpacity
+              key={day}
+              style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
+              onPress={() => setSelectedDay(day)}
+            >
+              <Text style={[styles.dayButtonText, selectedDay === day && styles.selectedDayButtonText]}>
+                {day}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Horários disponíveis:</Text>
+        <View style={styles.horariosContainer}>
+          {renderHorarios()}
+        </View>
+
+        <Text style={styles.sectionTitle}>Quantidade de pessoas:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Número de pessoas"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          value={peopleCount}
+          onChangeText={setPeopleCount}
+        />
+
+        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmBooking}>
+          <Text style={styles.confirmButtonText}>Confirmar agendamento</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.sectionTitle}>Selecione o dia:</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.weekDaysContainer}
-      >
-        {weekDays.map((day) => (
-          <TouchableOpacity
-            key={day}
-            style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
-            onPress={() => setSelectedDay(day)}
-          >
-            <Text style={[styles.dayButtonText, selectedDay === day && styles.selectedDayButtonText]}>
-              {day}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Text style={styles.sectionTitle}>Horários disponíveis:</Text>
-      {renderHorarios()}
-
-      <Text style={styles.sectionTitle}>Quantidade de pessoas:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Número de pessoas"
-        placeholderTextColor="#999"
-        keyboardType="numeric"
-        value={peopleCount}
-        onChangeText={setPeopleCount}
-      />
-
-      <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmBooking}>
-        <Text style={styles.confirmButtonText}>Confirmar agendamento</Text>
-      </TouchableOpacity>
     </ScrollView>
   )
 
@@ -296,7 +300,11 @@ const styles = StyleSheet.create({
     color: '#4ECB71',
   },
   bookingFormContainer: {
+    flex: 1,
+  },
+  bookingFormContent: {
     padding: 16,
+    paddingBottom: 32, // Adiciona padding extra no final
   },
   fieldHeader: {
     marginBottom: 24,
@@ -339,10 +347,14 @@ const styles = StyleSheet.create({
   selectedDayButtonText: {
     color: '#1D4A2A',
   },
+  horariosContainer: {
+    marginBottom: 16,
+  },
   horariosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingBottom: 8,
   },
   horarioButton: {
     width: '48%',

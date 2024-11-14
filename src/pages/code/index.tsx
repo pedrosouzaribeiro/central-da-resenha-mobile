@@ -8,11 +8,17 @@ const CodeScreen = () => {
   const route = useRoute();
   const { userData } = route.params; // Recebe os dados do usuário da tela de login
   const [code, setCode] = useState(['', '', '', '', '', '']);
+  const inputs = Array(6).fill(null); // Adiciona array para armazenar as refs
 
   const handleChangeText = (text: string, index: number) => {
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
+
+    // Avança para o próximo campo automaticamente
+    if (text.length === 1 && index < 5) {
+      inputs[index + 1]?.focus();
+    }
   };
 
   const handleVerifyCode = async () => {
@@ -55,20 +61,26 @@ const CodeScreen = () => {
       <Text style={styles.text}>Digite o código enviado no e-mail.</Text>
       <View style={styles.codeContainer}>
         {code.map((digit, index) => (
-          <React.Fragment key={index}>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              maxLength={1}
-              onChangeText={(text) => handleChangeText(text, index)}
-              value={digit}
-            />
-          </React.Fragment>
+          <TextInput
+            key={index}
+            style={styles.input}
+            keyboardType="numeric"
+            maxLength={1}
+            onChangeText={(text) => handleChangeText(text, index)}
+            value={digit}
+            ref={(input) => {
+              if (input) {
+                inputs[index] = input;
+              }
+            }}
+          />
         ))}
       </View>
-      <TouchableOpacity onPress={handleVerifyCode} style={styles.button}>
-        <Text style={styles.buttonText}>Verificar Código</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={handleVerifyCode} style={styles.button}>
+          <Text style={styles.buttonText}>Verificar Código</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -104,13 +116,15 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 5,
   },
+  buttonContainer: {
+    width: '80%',
+    marginTop: 20,
+  },
   button: {
     backgroundColor: '#4ECB71',
     padding: 15,
     borderRadius: 5,
-    width: '100%',
     alignItems: 'center',
-    marginTop: 20,
   },
   buttonText: {
     color: '#1D4A2A',

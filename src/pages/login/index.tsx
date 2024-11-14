@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ImageBackground, 
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -10,10 +21,15 @@ export default function Login() {
   const navigation = useNavigation();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Por favor, preencha o e-mail e a senha.');
+      return;
+    }
+
     const userData = {
       email,
       password,
-      codigoVerificacao: null, // Envia null para solicitar o código de verificação
+      codigoVerificacao: null,
     };
 
     try {
@@ -28,7 +44,6 @@ export default function Login() {
       const responseData = await response.json();
 
       if (response.ok) {
-        // Navega para a página "Code" e passa os dados do usuário
         navigation.navigate('Code', { userData });
       } else {
         navigation.navigate('Code', { userData });
@@ -40,60 +55,71 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.iconPlaceholder}>
-        <ImageBackground
-          source={require('../../assets/BALL.png')}
-          style={{
-            width: '100%',
-            height: '100%',
-            marginTop: -50
-          }}
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="email" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="E-mail"
-          placeholderTextColor="#666"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="key" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#666"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-          <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.iconPlaceholder}>
+          <ImageBackground
+            source={require('../../assets/BALL.png')}
+            style={{
+              width: '100%',
+              height: '100%',
+              marginTop: -50
+            }}
+          />
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <MaterialIcons name="email" size={24} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="E-mail"
+            placeholderTextColor="#666"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+          />
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <MaterialIcons name="key" size={24} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Senha"
+            placeholderTextColor="#666"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            returnKeyType="done"
+            onSubmitEditing={handleLogin}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity onPress={handleLogin} style={styles.button}>
+          <Text style={styles.buttonText}>Continuar</Text>
         </TouchableOpacity>
-      </View>
-      
-      <TouchableOpacity onPress={handleLogin} style={styles.button}>
-        <Text style={styles.buttonText}>Continuar</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
-        <Text style={styles.createAccount}>Criar uma conta</Text>
-      </TouchableOpacity>
-    </View>
+        
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
+          <Text style={styles.createAccount}>Criar uma conta</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',

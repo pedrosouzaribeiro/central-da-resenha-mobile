@@ -1,81 +1,127 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Header from '../../components/header';
-import Footer from '../../components/footer';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useRef, useEffect } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Dimensions, Platform } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons'
+import Header from '../../components/header'
+import Footer from '../../components/footer'
 
+const { width, height } = Dimensions.get('window')
+
+const menuItems = [
+  { icon: 'soccer-field', title: 'Reservar um campo', description: 'Reserve um horário no seu campo favorito.', route: 'Fields' },
+  { icon: 'cart-outline', title: 'Compras para o churras', description: 'Encontre os melhores preços da região.', route: 'Shopping' },
+  { icon: 'account-group', title: 'Organizar um time', description: 'Reúna os times para aquele fut.', route: 'Teams' },
+  { icon: 'account-plus-outline', title: 'Adicionar um amigo', description: 'Convide amigos para jogos.', route: 'AddFriend' },
+]
 
 export default function MenuScreen() {
-  const navigation = useNavigation();
-  const menuItems = [
-    { icon: 'soccer-field', title: 'Reservar um campo', description: 'Reserve um horário no seu campo favorito. Verifique aqui a disponibilidade de horários.', route: 'Fields' },
-    { icon: 'cart-outline', title: 'Compras para o churras', description: 'Encontre os melhores preços de região e divida o valor com seus amigos. Sem dores de cabeça.', route: 'Shopping' },
-    { icon: 'account-group', title: 'Organizar um time', description: 'Organize e reúna os times para aquele fut? Não tenha mais problemas com times desbalanceados.', route: 'TeamOrganizer' },
-    { icon: 'plus-circle-outline', title: 'Adicionar um amigo', description: 'Adicione seus amigos que já utilizam a Central da Reserva. Ao adicionar um amigo, você pode formar grupos e convidá-los para jogos.', route: 'AddFriend' },
-  ];
+  const navigation = useNavigation()
+  const scrollY = useRef(new Animated.Value(0)).current
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  })
+
+  const renderMenuItem = ({ icon, title, description, route }, index) => {
+    const translateY = scrollY.interpolate({
+      inputRange: [0, 50 * index, 50 * (index + 2)],
+      outputRange: [0, 0, 50],
+      extrapolate: 'clamp',
+    })
+
+    return (
+      <Animated.View key={index} style={[styles.menuItem, { transform: [{ translateY }] }]}>
+        <TouchableOpacity
+          style={styles.menuItemContent}
+          onPress={() => navigation.navigate(route)}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name={icon} size={32} color="#4ECB71" style={styles.menuIcon} />
+          <View style={styles.menuTextContainer}>
+            <Text style={styles.menuItemTitle}>{title}</Text>
+            <Text style={styles.menuItemDescription}>{description}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#4ECB71" />
+        </TouchableOpacity>
+      </Animated.View>
+    )
+  }
 
   return (
     <View style={styles.container}>
-      <View style={{ marginHorizontal: -20, marginTop: -85 }}><Header /></View>
+      <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
+        <Header />
+      </Animated.View>
 
-      <Text style={styles.title}>O que você quer fazer hoje?</Text>
-      {menuItems.map((item, index) => (
-        <TouchableOpacity key={index} style={styles.menuItem} onPress={() => navigation.navigate(item.route)}>
-          <MaterialCommunityIcons name={item.icon} size={24} color="#F5F5F5" style={styles.menuIcon} />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuItemTitle}>{item.title}</Text>
-            <Text style={styles.menuItemDescription}>{item.description}</Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-      <View style={styles.contactSection}>
-        <Text style={styles.contactText}>Fale com a equipe da Central</Text>
-        <Text style={styles.contactHandle}>@centraldaresenha</Text>
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+      >
+        <Text style={styles.title}>O que você quer fazer hoje?</Text>
+        {menuItems.map(renderMenuItem)}
+
+        <View style={styles.contactSection}>
+          <Text style={styles.contactText}>Fale com a equipe da Central</Text>
+          <TouchableOpacity>
+            <Text style={styles.contactHandle}>@centraldaresenha</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
       <Footer />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
   },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#00FF00',
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
-  profileButton: {
-    padding: 5,
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    padding: 20,
-
+    paddingTop: Platform.OS === 'ios' ? 120 : 100,
+    paddingBottom: 100,
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 30,
-    marginTop: 20
+    textAlign: 'center',
   },
   menuItem: {
+    marginBottom: 20,
+    borderRadius: 12,
+    backgroundColor: '#131313',
+    shadowColor: '#4ECB71',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#131313',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-
+    padding: 20,
   },
   menuIcon: {
     marginRight: 15,
@@ -84,7 +130,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 5,
@@ -94,15 +140,17 @@ const styles = StyleSheet.create({
     color: '#AAAAAA',
   },
   contactSection: {
-    marginTop: 20,
+    marginTop: 40,
     alignItems: 'center',
   },
   contactText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#FFFFFF',
+    marginBottom: 5,
   },
   contactHandle: {
-    fontSize: 14,
-    color: '#BCBCBC',
+    fontSize: 16,
+    color: '#4ECB71',
+    fontWeight: 'bold',
   },
-});
+})

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
+import { AppRegistry } from 'react-native';
 import * as Font from 'expo-font';
 import LoginScreen from './src/pages/login';
 import SignUpScreen from './src/pages/signup';
@@ -20,6 +21,17 @@ const loadFonts = async () => {
   });
 };
 
+const MyTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#000000',
+    card: '#000000',
+    text: '#FFFFFF',
+    border: 'transparent',
+  },
+};
+
 function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
@@ -28,55 +40,56 @@ function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Ou um componente de carregamento
+    return null;
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="SignUp" 
-          component={SignUpScreen} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Code" 
-          component={CodeScreen} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="ProfileEditor" 
-          component={ProfileEditor} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Menu" 
-          component={MenuScreen} 
-          options={{ headerShown: false }} 
-        />
-         <Stack.Screen 
-          name="Profile" 
-          component={ProfileScreen} 
-          options={{ headerShown: false }} 
-        />
-         <Stack.Screen 
-          name="Fields" 
-          component={FieldsScreen} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Teams" 
-          component={Teams} 
-          options={{ headerShown: false }} 
-        />
+    <NavigationContainer theme={MyTheme}>
+      <Stack.Navigator 
+        initialRouteName="Login"
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: '#000' },
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          transitionSpec: {
+            open: {
+              animation: 'spring',
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+            close: {
+              animation: 'timing',
+              config: {
+                stiffness: 1000,
+                damping: 500,
+                mass: 3,
+                overshootClamping: true,
+                restDisplacementThreshold: 0.01,
+                restSpeedThreshold: 0.01,
+              },
+            },
+          },
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="Code" component={CodeScreen} />
+        <Stack.Screen name="ProfileEditor" component={ProfileEditor} />
+        <Stack.Screen name="Menu" component={MenuScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Fields" component={FieldsScreen} />
+        <Stack.Screen name="Teams" component={Teams} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+AppRegistry.registerComponent('main', () => App);
 
 export default App;

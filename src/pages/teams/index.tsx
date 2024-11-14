@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Dimensions, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Modal from 'react-native-modal';
 
 const { width, height } = Dimensions.get('window');
 
 const positions = [
-  { id: 'gk', label: 'GL', x: '50%', y: '85%' },
-  { id: 'zg1', label: 'ZG', x: '30%', y: '65%' },
-  { id: 'zg2', label: 'ZG', x: '70%', y: '65%' },
-  { id: 'ala1', label: 'ALA', x: '15%', y: '40%' },
-  { id: 'ala2', label: 'ALA', x: '85%', y: '40%' },
-  { id: 'pvo', label: 'PIVO', x: '50%', y: '40%' },
-  { id: 'fxo', label: 'FIXO', x: '50%', y: '15%' },
+  { id: 'gk', label: 'GK', x: '45%', y: '75%' }, // Ajustado para cima
+  { id: 'fxo', label: 'FIXO', x: '25%', y: '55%' }, // Ajustado para cima
+  { id: 'fxo2', label: 'FIXO', x: '65%', y: '55%' }, // Ajustado para cima
+  { id: 'ala1', label: 'ALA', x: '10%', y: '30%' }, // Ajustado para cima
+  { id: 'ala2', label: 'ALA', x: '80%', y: '30%' }, // Ajustado para cima
+  { id: 'mei', label: 'MEI', x: '45%', y: '30%' }, // Ajustado para cima
+  { id: 'pvo', label: 'PIVO', x: '45%', y: '5%' },  // Ajustado para cima
 ];
 
 export default function LineupScreen() {
@@ -21,6 +22,8 @@ export default function LineupScreen() {
   const [timer, setTimer] = useState('00:00');
   const [players, setPlayers] = useState({});
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState(null);
 
   useEffect(() => {
     loadPlayers();
@@ -50,6 +53,16 @@ export default function LineupScreen() {
     setPlayers(newPlayers);
     savePlayers(newPlayers);
     setEditingPlayer(null);
+  };
+
+  const handlePlayerPress = (positionId) => {
+    setSelectedPosition(positionId);
+    setIsModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedPosition(null);
   };
 
   return (
@@ -104,20 +117,10 @@ export default function LineupScreen() {
               <View style={styles.playerIconBackground}>
                 <MaterialCommunityIcons name="tshirt-crew" size={24} color="#4CAF50" />
               </View>
-              <Pressable onPress={() => setEditingPlayer(position.id)}>
-                {editingPlayer === position.id ? (
-                  <TextInput
-                    style={styles.nameInput}
-                    value={players[position.id] || ''}
-                    onChangeText={(text) => handlePlayerNameChange(position.id, text)}
-                    onBlur={() => setEditingPlayer(null)}
-                    autoFocus
-                  />
-                ) : (
-                  <Text style={styles.playerName}>
-                    {players[position.id] || 'Jogador'}
-                  </Text>
-                )}
+              <Pressable onPress={() => handlePlayerPress(position.id)}>
+                <Text style={styles.playerName}>
+                  {players[position.id] || 'Jogador'}
+                </Text>
               </Pressable>
             </View>
           ))}
@@ -126,6 +129,31 @@ export default function LineupScreen() {
           <Text style={styles.startButtonText}>Começar jogo</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        isVisible={isModalVisible}
+        onBackdropPress={handleModalClose}
+        onBackButtonPress={handleModalClose}
+        style={styles.modal}
+        avoidKeyboard={true}
+      >
+        <View style={styles.modalContent}>
+          <TextInput
+            style={styles.modalInput}
+            value={selectedPosition ? players[selectedPosition] || '' : ''}
+            onChangeText={(text) => handlePlayerNameChange(selectedPosition, text)}
+            placeholder="Nome do jogador"
+            placeholderTextColor="#666"
+            autoFocus
+          />
+          <TouchableOpacity 
+            style={styles.modalButton} 
+            onPress={handleModalClose}
+          >
+            <Text style={styles.modalButtonText}>Confirmar</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ImageBackground>
   );
 }
@@ -243,6 +271,36 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modal: {
+    margin: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#222',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalInput: {
+    backgroundColor: '#333',
+    color: '#fff',
+    padding: 15,
+    borderRadius: 5,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  modalButton: {
+    backgroundColor: '#4ECB71',
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#1D4A2A',
     fontSize: 16,
     fontWeight: 'bold',
   },
