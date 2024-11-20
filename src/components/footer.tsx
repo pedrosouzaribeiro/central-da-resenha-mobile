@@ -1,26 +1,43 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet,Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { MaterialIcons, Octicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
-
+import { useNavigation } from '@react-navigation/native';
 
 export default function Footer() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.footer}>
-      <TouchableOpacity style={styles.iconContainer}>
+      <TouchableOpacity 
+        style={styles.iconContainer} 
+        onPress={() => navigation.navigate('AddItem')}
+      >
         <AntDesign name="pluscircleo" size={24} color="white" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.iconContainer}>
-        <MaterialCommunityIcons name="soccer-field" size={33} color="white"  />
+      <TouchableOpacity 
+        style={styles.iconContainer} 
+        onPress={() => navigation.navigate('Fields')}
+      >
+        <MaterialCommunityIcons name="soccer-field" size={33} color="white" />
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.iconContainer, styles.activeIcon, styles.bola]}>
+      <TouchableOpacity 
+        style={[styles.iconContainer, styles.activeIcon, styles.bola]} 
+        onPress={() => navigation.navigate('Teams')}
+      >
         <Image source={{ uri: 'https://i.imgur.com/EMWvwxY.png' }} style={{ width: 40, height: 40 }} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.iconContainer}>
-        <AntDesign name="shoppingcart" size={31} color="gray" style={{marginBottom: 5}} />
+      <TouchableOpacity 
+        style={styles.iconContainer} 
+        onPress={() => navigation.navigate('Shopping')}
+      >
+        <AntDesign name="shoppingcart" size={31} color="gray" style={{ marginBottom: 5 }} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.iconContainer}>
+      <TouchableOpacity 
+        style={styles.iconContainer} 
+        onPress={() => navigation.navigate('Notifications')}
+      >
         <Octicons name="bell" size={24} color="white" />
       </TouchableOpacity>
     </View>
@@ -44,7 +61,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
     height: 40,
-
   },
   activeIcon: {
     backgroundColor: '#000',
@@ -53,5 +69,4 @@ const styles = StyleSheet.create({
   bola: {
     marginTop: -50,
   }
- 
 });

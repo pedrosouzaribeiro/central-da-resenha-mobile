@@ -58,7 +58,7 @@ export default function Header() {
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
-      <Text style={styles.title} onPress={() => navigation.navigate('Home' as never)}>Central da Resenha</Text>
+      <Text style={styles.title} onPress={() => navigation.navigate('Menu' as never)}>Central da Resenha</Text>
       <View style={styles.profileContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.profileNameContainer}>
           <Text style={styles.profileName}>{userName}</Text>

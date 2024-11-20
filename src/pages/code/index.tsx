@@ -42,7 +42,6 @@ const CodeScreen = () => {
 
       if (response.ok) {
         // Aqui você pode armazenar o token ou redirecionar para a página Home
-        Alert.alert('Código verificado com sucesso!');
         // Navega para a página Home e passa o token
         navigation.navigate('Menu', { token: responseData.token });
         await AsyncStorage.setItem('userToken', responseData.token);

@@ -7,19 +7,23 @@ import Modal from 'react-native-modal';
 const { width, height } = Dimensions.get('window');
 
 const positions = [
-  { id: 'gk', label: 'GK', x: '45%', y: '75%' }, // Ajustado para cima
-  { id: 'fxo', label: 'FIXO', x: '25%', y: '55%' }, // Ajustado para cima
-  { id: 'fxo2', label: 'FIXO', x: '65%', y: '55%' }, // Ajustado para cima
-  { id: 'ala1', label: 'ALA', x: '10%', y: '30%' }, // Ajustado para cima
-  { id: 'ala2', label: 'ALA', x: '80%', y: '30%' }, // Ajustado para cima
-  { id: 'mei', label: 'MEI', x: '45%', y: '30%' }, // Ajustado para cima
-  { id: 'pvo', label: 'PIVO', x: '45%', y: '5%' },  // Ajustado para cima
+  { id: 'gk', label: 'GK', x: '45%', y: '75%' },
+  { id: 'fxo', label: 'FIXO', x: '25%', y: '55%' },
+  { id: 'fxo2', label: 'FIXO', x: '65%', y: '55%' },
+  { id: 'ala1', label: 'ALA', x: '10%', y: '30%' },
+  { id: 'ala2', label: 'ALA', x: '80%', y: '30%' },
+  { id: 'mei', label: 'MEI', x: '45%', y: '30%' },
+  { id: 'pvo', label: 'PIVO', x: '45%', y: '5%' },
 ];
 
 export default function LineupScreen() {
   const [homeTeam, setHomeTeam] = useState('ARC');
   const [awayTeam, setAwayTeam] = useState('CTL');
-  const [timer, setTimer] = useState('00:00');
+  const [homeScore, setHomeScore] = useState(0);
+  const [awayScore, setAwayScore] = useState(0);
+  const [timer, setTimer] = useState(0);
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [players, setPlayers] = useState({});
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -28,6 +32,18 @@ export default function LineupScreen() {
   useEffect(() => {
     loadPlayers();
   }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (isGameStarted && !isPaused) {
+      interval = setInterval(() => {
+        setTimer((prevTimer) => prevTimer + 1);
+      }, 1000);
+    } else if (!isGameStarted) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isGameStarted, isPaused]);
 
   const loadPlayers = async () => {
     try {
@@ -65,6 +81,28 @@ export default function LineupScreen() {
     setSelectedPosition(null);
   };
 
+  const handleStartGame = () => {
+    setIsGameStarted(true);
+    setIsPaused(false);
+  };
+
+  const handlePauseGame = () => {
+    setIsPaused(!isPaused);
+  };
+
+  const handleStopGame = () => {
+    setIsGameStarted(false);
+    setTimer(0);
+  };
+
+  const handleIncreaseHomeScore = () => {
+    setHomeScore(homeScore + 1);
+  };
+
+  const handleIncreaseAwayScore = () => {
+    setAwayScore(awayScore + 1);
+  };
+
   return (
     <ImageBackground
       source={{ uri: 'https://i.imgur.com/c04prFF.png' }}
@@ -88,13 +126,19 @@ export default function LineupScreen() {
                 onChangeText={setHomeTeam}
               />
             </View>
-            <Text style={styles.score}>0</Text>
+            <Text style={styles.score}>{homeScore}</Text>
+            <TouchableOpacity onPress={handleIncreaseHomeScore}>
+              <Text style={styles.scoreButton}>+</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.timerContainer}>
-            <Text style={styles.timer}>{timer}</Text>
+            <Text style={styles.timer}>{Math.floor(timer / 60)}:{('0' + (timer % 60)).slice(-2)}</Text>
           </View>
           <View style={styles.teamContainer}>
-            <Text style={styles.score}>0</Text>
+            <TouchableOpacity onPress={handleIncreaseAwayScore}>
+              <Text style={styles.scoreButton}>+</Text>
+            </TouchableOpacity> 
+            <Text style={styles.score}>{awayScore}</Text>
             <View style={styles.teamNameContainer}>
               <TextInput
                 style={styles.teamName}
@@ -125,11 +169,23 @@ export default function LineupScreen() {
             </View>
           ))}
         </View>
-        <TouchableOpacity style={styles.startButton}>
-          <Text style={styles.startButtonText}>Começar jogo</Text>
-        </TouchableOpacity>
+        {!isGameStarted ? (
+          <TouchableOpacity style={styles.startButton} onPress={handleStartGame}>
+            <Text style={styles.startButtonText}>Começar jogo</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.controlButtonsContainer}>
+            <View style={styles.controlButtons}>
+              <TouchableOpacity style={[styles.controlButton, styles.stopButton]} onPress={handleStopGame}>
+                <Text style={styles.controlButtonText}>Parar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.controlButton, styles.pauseButton]} onPress={handlePauseGame}>
+                <Text style={styles.controlButtonText}>{isPaused ? 'Retomar' : 'Pausar'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
-
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={handleModalClose}
@@ -216,6 +272,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginHorizontal: 10,
   },
+  scoreButton: {
+    color: '#4CAF50',
+    fontSize: 24,
+    marginRight: 10,
+  },
   timerContainer: {
     backgroundColor: '#4CAF50',
     borderRadius: 15,
@@ -253,15 +314,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 5,
   },
-  nameInput: {
-    color: '#fff',
-    fontSize: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4CAF50',
-    padding: 0,
-    minWidth: 80,
-    textAlign: 'center',
-  },
   startButton: {
     backgroundColor: '#4CAF50',
     padding: 15,
@@ -272,6 +324,33 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  controlButtonsContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  controlButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '60%',
+  },
+  controlButton: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: '#FF8C00',
+  },
+  stopButton: {
+    backgroundColor: 'red',
+  },
+  pauseButton: {
+    backgroundColor: 'yellow',
+  },
+  controlButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
   },
   modal: {

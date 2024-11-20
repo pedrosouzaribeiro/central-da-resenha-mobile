@@ -1,76 +1,221 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  Alert,
+  Dimensions,
+  Platform,
+  KeyboardAvoidingView,
+  SafeAreaView,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
 
+const { width } = Dimensions.get('window');
 const API_URL = 'http://168.138.151.78:3000/api/accountmanagement';
-const TOKEN =  AsyncStorage.getItem('userToken'); // Replace with actual token
+
+const InputField = ({ label, value, onChangeText, keyboardType = 'default', width = '100%' }) => (
+  <View style={[styles.inputContainer, { width }]}>
+    <TextInput
+      style={styles.input}
+      placeholder={label}
+      placeholderTextColor="#999"
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+    />
+    <MaterialIcons name="edit" size={20} color="#999" />
+  </View>
+);
+
+const ProfileImage = ({ imageUri, onPress }) => (
+  <View style={styles.profileSection}>
+    <TouchableOpacity onPress={onPress}>
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.profileImage} />
+      ) : (
+        <View style={styles.defaultProfileImage} />
+      )}
+      <View style={styles.imagePickerOverlay}>
+        <MaterialIcons name="camera-alt" size={24} color="#fff" />
+      </View>
+    </TouchableOpacity>
+  </View>
+);
+
+const DeleteAccountModal = ({ visible, onClose, onDelete }) => (
+  <Modal
+    animationType="fade"
+    transparent
+    visible={visible}
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContent}>
+        <Text style={styles.modalTitle}>Apagar conta?</Text>
+        <Text style={styles.modalText}>
+          Esta ação não pode ser desfeita.
+        </Text>
+        <View style={styles.modalButtons}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.cancelButton]}
+            onPress={onClose}
+          >
+            <Text style={styles.modalButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.confirmDeleteButton]}
+            onPress={onDelete}
+          >
+            <Text style={styles.modalButtonText}>Confirmar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  </Modal>
+);
 
 export default function ProfileEditor() {
   const navigation = useNavigation();
-  const [name, setName] = useState('Kevin Girelli');
-  const [position, setPosition] = useState('');
-  const [number, setNumber] = useState('');
-  const [playStyle, setPlayStyle] = useState('');
-  const [city, setCity] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [imageUri, setImageUri] = useState<string | null>(null); // Adicione esta linha
   const [currentPage, setCurrentPage] = useState(0);
+  const scrollViewRef = useRef(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    position: '',
+    number: '',
+    playStyle: '',
+    city: '',
+    points: '',
+    victories: '',
+    games: '',
+    reflexes: '',
+    defense: '',
+    strength: '',
+    physical: '',
+    stars: '',
+    overall: '',
+    neighborhood: '',
+    imageUri: null,
+  });
 
-  // Novos estados para os campos adicionais
-  const [pontos, setPontos] = useState('');
-  const [vitorias, setVitorias] = useState('');
-  const [jogos, setJogos] = useState('');
-  const [reflexos, setReflexos] = useState('');
-  const [defesa, setDefesa] = useState('');
-  const [forca, setForca] = useState('');
-  const [fisico, setFisico] = useState('');
-  const [estrelas, setEstrelas] = useState('');
-  const [geral, setGeral] = useState('');
-  const [bairro, setBairro] = useState('');
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        Alert.alert('Erro', 'Token não encontrado. Faça login novamente.');
+        navigation.navigate('Login');
+        return;
+      }
+
+      const response = await axios.get(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const profileData = response.data;
+      setFormData(prevData => ({
+        ...prevData,
+        name: profileData.nickname || '',
+        position: profileData.posicao || '',
+        number: profileData.numeroPreferido || '',
+        playStyle: profileData.estilo || '',
+        city: profileData.cidadeEstado || '',
+        points: profileData.pontos?.toString() || '',
+        victories: profileData.vitorias?.toString() || '',
+        games: profileData.jogos?.toString() || '',
+        reflexes: profileData.reflexos?.toString() || '',
+        defense: profileData.defesa?.toString() || '',
+        strength: profileData.forca?.toString() || '',
+        physical: profileData.fisico?.toString() || '',
+        stars: profileData.estrelas?.toString() || '',
+        overall: profileData.geral?.toString() || '',
+        neighborhood: profileData.bairro || '',
+        imageUri: profileData.avatarUrl || null,
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar perfil:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados do perfil.');
+    }
+  };
+
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImagePicker = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        updateField('imageUri', result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem');
+    }
+  };
 
   const handleConfirm = async () => {
     try {
-      // Criando o objeto JSON diretamente
-      const dadosParaEnviar = {
-        pontos: parseInt(pontos) || 0,
-        vitorias: parseInt(vitorias) || 0,
-        jogos: parseInt(jogos) || 0,
-        reflexos: parseInt(reflexos) || 0,
-        defesa: parseInt(defesa) || 0,
-        forca: parseInt(forca) || 0,
-        fisico: parseInt(fisico) || 0,
-        estrelas: parseInt(estrelas) || 0,
-        estilo: playStyle || '',
-        posicao: position || '',
-        cidadeEstado: city || '',
-        numeroPreferido: number || '',
-        bairro: bairro || '',
-        geral: parseInt(geral) || 0
-      };
-
-      // Log para debug
-      console.log('Dados sendo enviados:', dadosParaEnviar);
-
       const token = await AsyncStorage.getItem('userToken');
-      const response = await fetch(`${API_URL}/update`, {
-        method: 'PUT',
+      if (!token) {
+        Alert.alert('Erro', 'Token não encontrado. Faça login novamente.');
+        navigation.navigate('Login');
+        return;
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('fotoAvatar', {
+        uri: formData.imageUri,
+        type: 'image/jpeg',
+        name: 'avatar.jpg',
+      });
+      formDataToSend.append('nickname', formData.name);
+      formDataToSend.append('posicao', formData.position);
+      formDataToSend.append('numeroPreferido', formData.number);
+      formDataToSend.append('estilo', formData.playStyle);
+      formDataToSend.append('cidadeEstado', formData.city);
+      formDataToSend.append('pontos', parseInt(formData.points) || 0);
+      formDataToSend.append('vitorias', parseInt(formData.victories) || 0);
+      formDataToSend.append('jogos', parseInt(formData.games) || 0);
+      formDataToSend.append('reflexos', parseInt(formData.reflexes) || 0);
+      formDataToSend.append('defesa', parseInt(formData.defense) || 0);
+      formDataToSend.append('forca', parseInt(formData.strength) || 0);
+      formDataToSend.append('fisico', parseInt(formData.physical) || 0);
+      formDataToSend.append('estrelas', parseInt(formData.stars) || 0);
+      formDataToSend.append('geral', parseInt(formData.overall) || 0);
+      formDataToSend.append('bairro', formData.neighborhood);
+
+      const response = await axios.put(`${API_URL}/update`, formDataToSend, {
         headers: {
-          'Content-Type': 'application/json', // Mudado para application/json
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: JSON.stringify(dadosParaEnviar), // Enviando como JSON
       });
 
-      if (response.ok) {
-        Alert.alert('Sucesso', 'Perfil atualizado com sucesso');
+      if (response.status === 200) {
+        Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha ao atualizar perfil');
+        throw new Error('Falha ao atualizar perfil');
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
@@ -80,514 +225,381 @@ export default function ProfileEditor() {
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${API_URL}/delete-account`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TOKEN}`
-        },
-        body: JSON.stringify({ requestDelete: 1 })
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        Alert.alert('Erro', 'Token não encontrado. Faça login novamente.');
+        navigation.navigate('Login');
+        return;
+      }
+
+      const response = await axios.delete(`${API_URL}/delete-account`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { requestDelete: 1 },
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         Alert.alert('Conta deletada', 'Sua conta foi deletada com sucesso');
+        await AsyncStorage.removeItem('userToken');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
       } else {
         throw new Error('Erro ao deletar conta');
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      console.error('Erro ao deletar conta:', error);
+      Alert.alert('Erro', 'Não foi possível deletar a conta. Tente novamente.');
     }
   };
 
-  const handleImagePicker = async () => {
-    // Solicitar permissão para acessar a galeria
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      Alert.alert('Permissão necessária', 'Você precisa permitir o acesso à galeria para escolher uma imagem.');
-      return;
-    }
-
-    // Abrir o seletor de imagens
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri); // Armazena a URI da imagem selecionada
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      // Remove o token do AsyncStorage
-      await AsyncStorage.removeItem('userToken');
-      
-      // Força a navegação para a tela de Login e limpa a pilha de navegação
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-
-      // Adiciona um alerta para confirmar o logout
-      Alert.alert(
-        'Logout',
-        'Você saiu da sua conta com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => console.log('Logout successful')
-          }
-        ]
-      );
-
-    } catch (error) {
-      console.error('Erro no logout:', error);
-      Alert.alert('Erro', 'Não foi possível sair da conta. Tente novamente.');
-    }
+  const handlePageChange = (pageIndex) => {
+    setCurrentPage(pageIndex);
+    scrollViewRef.current?.scrollTo({ x: pageIndex * width, animated: true });
   };
 
   return (
-    <View style={styles.container}>
-      <View><Header /></View>
-      
-      <Text style={styles.title}>Editar perfil</Text>
-      <View style={styles.profileImageContainer}>
-        <Image
-          source={{ uri: 'https://avatars.githubusercontent.com/u/131497909?v=4' }}
-          style={styles.profileImage}
-        />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Header />
       </View>
 
-      <View style={styles.contentContainer}>
-        <ScrollView 
-          horizontal 
-          pagingEnabled 
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={(event) => {
-            const page = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
-            setCurrentPage(page);
-          }}
-        >
-          {/* Primeira página */}
-          <View style={[styles.page, styles.viewbug]}>
-            <TouchableOpacity style={styles.imagePickerButton} onPress={handleImagePicker}>
-              <Text style={styles.imagePickerText}>Escolher imagem</Text>
-              <MaterialIcons name="file-download" size={24} color="#B5B5B5" style={{ marginLeft: 110 }}/>
-            </TouchableOpacity>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Nome"
-                placeholderTextColor="#999"
-              />
-              <MaterialIcons name="edit" size={24} color="#999" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView style={styles.content}>
+          <ProfileImage imageUri={formData.imageUri} onPress={handleImagePicker} />
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(event) => {
+              const pageIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+              setCurrentPage(pageIndex);
+            }}
+          >
+            <View style={styles.page}>
+              <View style={styles.row}>
+                <InputField
+                  label="Nome"
+                  value={formData.name}
+                  onChangeText={(value) => updateField('name', value)}
+                  width="100%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Posição"
+                  value={formData.position}
+                  onChangeText={(value) => updateField('position', value)}
+                  width="48%"
+                />
+                <InputField
+                  label="Número"
+                  value={formData.number}
+                  onChangeText={(value) => updateField('number', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Estilo de jogo"
+                  value={formData.playStyle}
+                  onChangeText={(value) => updateField('playStyle', value)}
+                  width="100%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Cidade"
+                  value={formData.city}
+                  onChangeText={(value) => updateField('city', value)}
+                  width="48%"
+                />
+                <InputField
+                  label="Bairro"
+                  value={formData.neighborhood}
+                  onChangeText={(value) => updateField('neighborhood', value)}
+                  width="48%"
+                />
+              </View>
             </View>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={position}
-                onChangeText={setPosition}
-                placeholder="Posição"
-                placeholderTextColor="#999"
-              />
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={number}
-                onChangeText={setNumber}
-                placeholder="Número"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
+            <View style={styles.page}>
+              <View style={styles.row}>
+                <InputField
+                  label="Pontos"
+                  value={formData.points}
+                  onChangeText={(value) => updateField('points', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+                <InputField
+                  label="Vitórias"
+                  value={formData.victories}
+                  onChangeText={(value) => updateField('victories', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Reflexos"
+                  value={formData.reflexes}
+                  onChangeText={(value) => updateField('reflexes', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+                <InputField
+                  label="Defesa"
+                  value={formData.defense}
+                  onChangeText={(value) => updateField('defense', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Força"
+                  value={formData.strength}
+                  onChangeText={(value) => updateField('strength', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+                <InputField
+                  label="Físico"
+                  value={formData.physical}
+                  onChangeText={(value) => updateField('physical', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+              </View>
+              <View style={styles.row}>
+                <InputField
+                  label="Estrelas"
+                  value={formData.stars}
+                  onChangeText={(value) => updateField('stars', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+                <InputField
+                  label="Geral"
+                  value={formData.overall}
+                  onChangeText={(value) => updateField('overall', value)}
+                  keyboardType="numeric"
+                  width="48%"
+                />
+              </View>
             </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={playStyle}
-                onChangeText={setPlayStyle}
-                placeholder="Estilo de jogo"
-                placeholderTextColor="#999"
-              />
-              <MaterialIcons name="edit" size={22} color="#999" />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={city}
-                onChangeText={setCity}
-                placeholder="Cidade"
-                placeholderTextColor="#999"
-              />
-              <MaterialIcons name="edit" size={22} color="#999" />
-            </View>
-
-            <View style={styles.swipeIndicator}>
-              <MaterialIcons name="swipe" size={24} color="#666" />
-              <Text style={styles.swipeText}>Deslize para mais opções</Text>
-            </View>
-          </View>
-
-          {/* Segunda página - campos adicionais */}
-          <View style={[styles.page, styles.viewbug]}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={pontos}
-                onChangeText={setPontos}
-                placeholder="Pontos"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <MaterialIcons name="edit" size={24} color="#999" />
-            </View>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={vitorias}
-                onChangeText={setVitorias}
-                placeholder="Vitórias"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={jogos}
-                onChangeText={setJogos}
-                placeholder="Jogos"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={reflexos}
-                onChangeText={setReflexos}
-                placeholder="Reflexos"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={defesa}
-                onChangeText={setDefesa}
-                placeholder="Defesa"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={forca}
-                onChangeText={setForca}
-                placeholder="Força"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={fisico}
-                onChangeText={setFisico}
-                placeholder="Físico"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={estrelas}
-                onChangeText={setEstrelas}
-                placeholder="Estrelas"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={[styles.input, styles.halfWidth]}
-                value={geral}
-                onChangeText={setGeral}
-                placeholder="Geral"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={bairro}
-                onChangeText={setBairro}
-                placeholder="Bairro"
-                placeholderTextColor="#999"
-              />
-              <MaterialIcons name="edit" size={24} color="#999" />
-            </View>
+          </ScrollView>
+          
+          <View style={styles.pageIndicator}>
+            <TouchableOpacity
+              style={[styles.pageButton, currentPage === 0 && styles.activePageButton]}
+              onPress={() => handlePageChange(0)}
+            />
+            <TouchableOpacity
+              style={[styles.pageButton, currentPage === 1 && styles.activePageButton]}
+              onPress={() => handlePageChange(1)}
+            />
           </View>
         </ScrollView>
+      </KeyboardAvoidingView>
 
-        <View style={styles.paginationDots}>
-          <View style={[styles.dot, currentPage === 0 && styles.activeDot]} />
-          <View style={[styles.dot, currentPage === 1 && styles.activeDot]} />
-        </View>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutText}>Sair da conta</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.confirmButton} 
+      <View style={styles.buttonWrapper}>
+        <TouchableOpacity
+          style={styles.confirmButton}
           onPress={handleConfirm}
         >
-          <Text style={styles.buttonText}>Confirmar edições</Text>
+          <Text style={styles.confirmButtonText}>Confirmar edições</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.deleteButton} 
+        <TouchableOpacity
+          style={styles.deleteButton}
           onPress={() => setShowDeleteModal(true)}
         >
-          <Text style={styles.buttondelete}>Apagar conta</Text>
+          <Text style={styles.deleteButtonText}>Apagar conta</Text>
         </TouchableOpacity>
       </View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showDeleteModal}
-        onRequestClose={() => setShowDeleteModal(false)}
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>VOCÊ QUER APAGAR A SUA CONTA?</Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setShowDeleteModal(false)}
-              >
-                <Text style={styles.buttonText}>Não</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={() => {
-                  setShowDeleteModal(false);
-                  handleDelete();
-                }}
-              >
-                <Text style={styles.buttonText}>Sim</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-      <Footer />
-    </View>
+      <View style={styles.footerContainer}>
+        <Footer />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',    
+    backgroundColor: '#000',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 30,
-    marginTop: 20
+  keyboardAvoid: {
+    flex: 1,
   },
-  profileImageContainer: {
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 80,
+  },
+  page: {
+    width: width,
+    paddingHorizontal: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  profileSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 20,
   },
   profileImage: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#4ECB71',
   },
-  imagePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E1E1E',
-    padding: 10,
-    borderRadius: 13,
-    marginBottom: 10,
+  defaultProfileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#333',
+    borderWidth: 3,
+    borderColor: '#4ECB71',
   },
-  imagePickerText: {
-    color: '#B8B8B8',
-
+  imagePickerOverlay: {
+    position: 'absolute',
+    right: -8,
+    bottom: -8,
+    backgroundColor: '#4ECB71',
+    borderRadius: 20,
+    padding: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#212121',
-    borderRadius: 13,
-    marginBottom: 10,
-    paddingRight: 10, // Adiciona espaço para o ícone dentro do input
+    borderRadius: 12,
+    paddingRight: 12,
   },
   input: {
-    flex: 1, // Permite que o TextInput ocupe o espaço restante
-    backgroundColor: '#212121',
-    color: '#B8B8B8',
-    padding: 13,
-    borderRadius: 13,
-    fontSize: 14,
+    flex: 1,
+    color: '#fff',
+    padding: 12,
+    fontSize: 16,
   },
-  icon: {
-    marginLeft: -30, // Ajusta a posição do ícone dentro do input
-  },
-  row: {
+  pageIndicator: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 10,
-  },
-  halfWidth: {
-    width: '48%',
-  },
-  logoutButton: {
-    alignItems: 'center',
-    padding: 15,
+    justifyContent: 'center',
+    marginTop: 10,
     marginBottom: 20,
-    marginLeft: -15,
   },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'thin',
-    fontFamily: 'montserrat',
+  pageButton: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#666',
+    marginHorizontal: 5,
+  },
+  activePageButton: {
+    backgroundColor: '#4ECB71',
+  },
+  buttonWrapper: {
+    paddingHorizontal: 20,
+    paddingBottom: 5,
+    backgroundColor: '#000',
+    position: 'absolute',
+    bottom: 155,
+    left: 0,
+    right: 0,
+    zIndex: 2,
   },
   confirmButton: {
     backgroundColor: '#4ECB71',
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 10,
-    marginTop: -16,
+    marginBottom: 5,
+  },
+  confirmButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   deleteButton: {
     backgroundColor: '#CB4E4E',
-    padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
+    marginBottom: 5,
   },
-  buttondelete:{
-    color: '#4A201D',
-    fontSize: 16,
-    fontWeight: 'bold',
-
-  },
-  buttonText: {
-    color: '#1D4A2A',
+  deleteButtonText: {
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  centeredView: {
+  footerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalView: {
-    backgroundColor: '#1E1E1E',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
+  modalContent: {
+    backgroundColor: '#212121',
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   modalText: {
-    marginBottom: 15,
+    fontSize: 16,
+    color: '#999',
+    marginBottom: 24,
     textAlign: 'center',
-    color: '#1D4A2A',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
   },
   modalButton: {
-    borderRadius: 5,
-    padding: 10,
-    elevation: 2,
-    width: '45%',
-  },
-  modalButtonCancel: {
-    backgroundColor: '#808080',
-  },
-  modalButtonConfirm: {
-    backgroundColor: '#4ECB71',
-  },
-  viewbug: {
-    paddingHorizontal: 40
-  },
-  contentContainer: {
-    flex: 1, // Isso vai fazer o conteúdo ocupar o espaço disponível
-    maxHeight: 400, // Ajuste este valor conforme necessário
-  },
-  page: {
-    width: Dimensions.get('window').width,
-    paddingHorizontal: 40,
-  },
-  paginationDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flex: 1,
+    borderRadius: 8,
+    padding: 12,
     alignItems: 'center',
-    paddingVertical: 10,
+    marginHorizontal: 8,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#666',
-    marginHorizontal: 4,
+  cancelButton: {
+    backgroundColor: '#333',
   },
-  activeDot: {
-    backgroundColor: '#4ECB71',
-    width: 10,
-    height: 10,
+  confirmDeleteButton: {
+    backgroundColor: '#CB4E4E',
   },
-  buttonContainer: {
-    paddingHorizontal: 40,
-    marginBottom: 20,
-  },
-  swipeIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    opacity: 0.7,
-  },
-  swipeText: {
-    color: '#666',
-    marginLeft: 8,
-    fontSize: 14,
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
