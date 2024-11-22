@@ -31,18 +31,19 @@ export default function Header() {
 
         // Atualiza o estado com os dados do usuário
         setClientId(response.data.idcliente); // Armazena o ID do cliente
-        setPosition(response.data.nivelusuario || ''); // Ajuste conforme necessário
+
 
         // Segunda requisição para obter o nickname usando o ID do cliente
         if (response.data.idcliente) {
           const profileResponse = await axios.get(`http://168.138.151.78:3000/api/accountmanagement/profile/${response.data.idcliente}`, {
             headers: {
-              Authorization: `Bearer ${token}`, // Usa o token recuperado
+              Authorization: `Bearer ${token}`, // Usa o token
             },
           });
 
+          setPosition(profileResponse.data.profile.posicao || '');
           // Atualiza o estado com o nickname
-          setUserName(profileResponse.data.profile.nickname || 'usuario'); // Aqui você pode ajustar para o campo que deseja exibir
+          setUserName(profileResponse.data.profile.nickname || 'usuario');
         }
       } catch (error) {
         console.error('Erro ao buscar dados do usuário:', error);

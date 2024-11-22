@@ -70,12 +70,22 @@ export default function ProfileScreen() {
         playingStyle: capitalize(profileResponse.data.profile.estilo),
         styleRating: profileResponse.data.profile.estrelas || 0,
         location: capitalize(profileResponse.data.profile.cidadeestado),
-        subLocation: capitalize(profileResponse.data.profile.bairro)
+        subLocation: capitalize(profileResponse.data.profile.bairro),
+        avatarUrl: `http://168.138.151.78:3000/${profileResponse.data.profile.fotoavatar}`
       })
       setLoading(false)
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error)
       setLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userToken'); // Remove o token
+      navigation.navigate('Login'); // Redireciona para a tela de login
+    } catch (error) {
+      console.error('Erro ao deslogar:', error);
     }
   }
 
@@ -122,7 +132,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileHeader}>
           <Image
-            source={{ uri: 'https://avatars.githubusercontent.com/u/131497909?v=4' }}
+            source={{ uri: userData.avatarUrl }}
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
@@ -183,6 +193,10 @@ export default function ProfileScreen() {
           style={styles.editButton}
         >
           <Text style={styles.editButtonText}>Editar perfil</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutButtonText}>Deslogar</Text>
         </TouchableOpacity>
       </ScrollView>
       <Footer />
@@ -323,6 +337,15 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     color: '#1D4A2A',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#4ECB71', // Cor do texto
     fontSize: 16,
     fontWeight: 'bold',
   },

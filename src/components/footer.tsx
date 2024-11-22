@@ -30,9 +30,9 @@ export default function Footer() {
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.iconContainer} 
-        onPress={() => navigation.navigate('Shopping')}
+        onPress={() => navigation.navigate('Agendamentos')}
       >
-        <AntDesign name="shoppingcart" size={31} color="gray" style={{ marginBottom: 5 }} />
+        <AntDesign name="calendar" size={31} color="white" style={{ marginBottom: 5 }} />
       </TouchableOpacity>
       <TouchableOpacity 
         style={styles.iconContainer} 

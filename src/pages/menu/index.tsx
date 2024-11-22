@@ -9,7 +9,7 @@ const { width, height } = Dimensions.get('window')
 
 const menuItems = [
   { icon: 'soccer-field', title: 'Reservar um campo', description: 'Reserve um horário no seu campo favorito.', route: 'Fields' },
-  { icon: 'cart-outline', title: 'Compras para o churras', description: 'Encontre os melhores preços da região.', route: 'Shopping' },
+  { icon: 'calendar', title: 'Meus agendamentos', description: 'Ver o histórico dos seus agendamentos.', route: 'Agendamentos' },
   { icon: 'account-group', title: 'Organizar um time', description: 'Reúna os times para aquele fut.', route: 'Teams' },
   { icon: 'account-plus-outline', title: 'Adicionar um amigo', description: 'Convide amigos para jogos.', route: 'AddFriend' },
 ]
@@ -59,11 +59,11 @@ export default function MenuScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
+        // onScroll={Animated.event(
+        //   [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        //   { useNativeDriver: true }
+        // )}
+        // scrollEventThrottle={16}
       >
         <Text style={styles.title}>O que você quer fazer hoje?</Text>
         {menuItems.map(renderMenuItem)}

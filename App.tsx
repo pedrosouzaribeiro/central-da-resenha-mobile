@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { AppRegistry } from 'react-native';
 import * as Font from 'expo-font';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './src/pages/login';
 import SignUpScreen from './src/pages/signup';
 import CodeScreen from './src/pages/code';
@@ -11,6 +12,7 @@ import MenuScreen from './src/pages/menu';
 import ProfileScreen from './src/pages/profile';
 import FieldsScreen from './src/pages/fields';
 import Teams from './src/pages/teams';
+import AgendamentosScreen from './src/pages/agendamentos';
 
 const Stack = createStackNavigator();
 
@@ -36,13 +38,15 @@ function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
-    loadFonts().then(() => setFontsLoaded(true));
+    loadFonts().then(() => {
+      setFontsLoaded(true);
+    });
   }, []);
 
   if (!fontsLoaded) {
     return null;
   }
-
+  
   return (
     <NavigationContainer theme={MyTheme}>
       <Stack.Navigator 
@@ -85,6 +89,7 @@ function App() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Fields" component={FieldsScreen} />
         <Stack.Screen name="Teams" component={Teams} />
+        <Stack.Screen name="Agendamentos" component={AgendamentosScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

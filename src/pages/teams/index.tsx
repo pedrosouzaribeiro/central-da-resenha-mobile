@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, D
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,6 +18,7 @@ const positions = [
 ];
 
 export default function LineupScreen() {
+  const navigation = useNavigation();
   const [homeTeam, setHomeTeam] = useState('ARC');
   const [awayTeam, setAwayTeam] = useState('CTL');
   const [homeScore, setHomeScore] = useState(0);
@@ -111,7 +113,9 @@ export default function LineupScreen() {
     >
       <View style={styles.overlay}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Central da Resenha</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Menu')}>
+            <Text style={styles.headerTitle}>Central da Resenha</Text>
+          </TouchableOpacity>
           <MaterialCommunityIcons name="soccer" size={24} color="#4CAF50" />
           <View style={styles.profileIcon}>
             <MaterialCommunityIcons name="account" size={24} color="#fff" />
