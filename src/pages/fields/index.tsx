@@ -27,6 +27,21 @@ const featuredField = {
 
 const categories = ['Society', 'Futebol', 'Futsal']
 
+// Adicione esta função de formatação
+const formatWeekday = (weekday) => {
+  const weekdayMap = {
+    'domingo': 'Domingo',
+    'segunda': 'Segunda',
+    'terca': 'Terça',
+    'quarta': 'Quarta',
+    'quinta': 'Quinta',
+    'sexta': 'Sexta',
+    'sabado': 'Sábado'
+  };
+  
+  return weekdayMap[weekday.toLowerCase()] || weekday;
+};
+
 export default function FieldsScreen() {
   const [modalVisible, setModalVisible] = useState(false)
   const [fields, setFields] = useState([])

@@ -21,6 +21,8 @@ import { AlignJustify } from 'lucide-react-native'
 
 const { width } = Dimensions.get('window')
 
+const DEFAULT_PROFILE_IMAGE = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png';
+
 export default function ProfileScreen() {
   const navigation = useNavigation()
   const [userData, setUserData] = useState({
@@ -71,7 +73,9 @@ export default function ProfileScreen() {
         styleRating: profileResponse.data.profile.estrelas || 0,
         location: capitalize(profileResponse.data.profile.cidadeestado),
         subLocation: capitalize(profileResponse.data.profile.bairro),
-        avatarUrl: `http://168.138.151.78:3000/${profileResponse.data.profile.fotoavatar}`
+        avatarUrl: profileResponse.data.profile.fotoavatar 
+          ? `http://168.138.151.78:3000/${profileResponse.data.profile.fotoavatar}`
+          : DEFAULT_PROFILE_IMAGE
       })
       setLoading(false)
     } catch (error) {
@@ -134,6 +138,12 @@ export default function ProfileScreen() {
           <Image
             source={{ uri: userData.avatarUrl }}
             style={styles.profileImage}
+            onError={() => {
+              setUserData(prev => ({
+                ...prev,
+                avatarUrl: DEFAULT_PROFILE_IMAGE
+              }));
+            }}
           />
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{userData.name}</Text>

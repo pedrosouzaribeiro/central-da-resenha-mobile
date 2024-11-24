@@ -99,6 +99,8 @@ const styles = StyleSheet.create({
     marginLeft: -50,
     width: "40%",
     color: '#4ecb71',
+    position: 'absolute',
+    left: 120,
   },
   profileContainer: {
     flexDirection: 'row',

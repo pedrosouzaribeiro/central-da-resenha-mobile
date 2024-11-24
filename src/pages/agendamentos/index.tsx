@@ -26,6 +26,7 @@ interface Agendamento {
   nomeempresa: string
   semana: string
   horario: Horario
+  pago: boolean
 }
 
 export default function AgendamentosScreen() {
@@ -78,9 +79,21 @@ export default function AgendamentosScreen() {
         <Text style={styles.data}>{formattedDate}</Text>
         <View style={styles.footerContainer}>
           <Text style={styles.preco}>R$ {item.preco.toFixed(2)}</Text>
-          <View style={styles.statusContainer}>
-            <MaterialIcons name="payment" size={18} color="#4ECB71" />
-            <Text style={styles.statusText}>Pago</Text>
+          <View style={[
+            styles.statusContainer, 
+            !item.pago && styles.statusContainerPendente
+          ]}>
+            <MaterialIcons 
+              name={item.pago ? "payment" : "pending"} 
+              size={18} 
+              color={item.pago ? "#4ECB71" : "#FFA500"} 
+            />
+            <Text style={[
+              styles.statusText,
+              !item.pago && styles.statusTextPendente
+            ]}>
+              {item.pago ? "Pago" : "Pendente"}
+            </Text>
           </View>
         </View>
       </View>
@@ -198,11 +211,17 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
   },
+  statusContainerPendente: {
+    backgroundColor: 'rgba(255, 165, 0, 0.2)',
+  },
   statusText: {
     fontSize: 14,
     color: '#4ECB71',
     marginLeft: 5,
     fontWeight: 'bold',
+  },
+  statusTextPendente: {
+    color: '#FFA500',
   },
   emptyText: {
     fontSize: 16,

@@ -24,6 +24,7 @@ import Footer from '../../components/footer';
 
 const { width } = Dimensions.get('window');
 const API_URL = 'http://168.138.151.78:3000/api/accountmanagement';
+const DEFAULT_PROFILE_IMAGE = 'http://168.138.151.78:3000/uploads/avatars/default/default.jpg';
 
 const InputField = ({ label, value, onChangeText, keyboardType = 'default', width = '100%' }) => (
   <View style={[styles.inputContainer, { width }]}>
@@ -39,14 +40,14 @@ const InputField = ({ label, value, onChangeText, keyboardType = 'default', widt
   </View>
 );
 
-const ProfileImage = ({ imageUri, onPress }) => (
+const ProfileImage = ({ imageUri, onPress, onError }) => (
   <View style={styles.profileSection}>
     <TouchableOpacity onPress={onPress}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.profileImage} />
-      ) : (
-        <View style={styles.defaultProfileImage} />
-      )}
+      <Image 
+        source={{ uri: imageUri || DEFAULT_PROFILE_IMAGE }} 
+        style={styles.profileImage}
+        onError={onError}
+      />
       <View style={styles.imagePickerOverlay}>
         <MaterialIcons name="camera-alt" size={24} color="#fff" />
       </View>
@@ -123,18 +124,24 @@ export default function ProfileEditor() {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const userResponse = await axios.get(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      
+      const profileResponse = await axios.get(`${API_URL}/profile/${userResponse.data.idcliente}`);
+      const profileData = profileResponse.data.profile;
 
-      const profileData = response.data;
+      const imageUrl = profileData.fotoavatar 
+        ? `http://168.138.151.78:3000/${profileData.fotoavatar}`
+        : DEFAULT_PROFILE_IMAGE;
+
       setFormData(prevData => ({
         ...prevData,
         name: profileData.nickname || '',
         position: profileData.posicao || '',
-        number: profileData.numeroPreferido || '',
+        number: profileData.numeropreferido?.toString() || '',
         playStyle: profileData.estilo || '',
-        city: profileData.cidadeEstado || '',
+        city: profileData.cidadeestado || '',
         points: profileData.pontos?.toString() || '',
         victories: profileData.vitorias?.toString() || '',
         games: profileData.jogos?.toString() || '',
@@ -145,7 +152,7 @@ export default function ProfileEditor() {
         stars: profileData.estrelas?.toString() || '',
         overall: profileData.geral?.toString() || '',
         neighborhood: profileData.bairro || '',
-        imageUri: profileData.avatarUrl || null,
+        imageUri: imageUrl,
       }));
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
@@ -184,26 +191,34 @@ export default function ProfileEditor() {
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append('fotoAvatar', {
-        uri: formData.imageUri,
-        type: 'image/jpeg',
-        name: 'avatar.jpg',
-      });
-      formDataToSend.append('nickname', formData.name);
-      formDataToSend.append('posicao', formData.position);
-      formDataToSend.append('numeroPreferido', formData.number);
-      formDataToSend.append('estilo', formData.playStyle);
-      formDataToSend.append('cidadeEstado', formData.city);
-      formDataToSend.append('pontos', parseInt(formData.points) || 0);
-      formDataToSend.append('vitorias', parseInt(formData.victories) || 0);
-      formDataToSend.append('jogos', parseInt(formData.games) || 0);
-      formDataToSend.append('reflexos', parseInt(formData.reflexes) || 0);
-      formDataToSend.append('defesa', parseInt(formData.defense) || 0);
-      formDataToSend.append('forca', parseInt(formData.strength) || 0);
-      formDataToSend.append('fisico', parseInt(formData.physical) || 0);
-      formDataToSend.append('estrelas', parseInt(formData.stars) || 0);
-      formDataToSend.append('geral', parseInt(formData.overall) || 0);
-      formDataToSend.append('bairro', formData.neighborhood);
+      
+      // Campos obrigatórios (texto)
+      formDataToSend.append('nickname', formData.name || '');
+      formDataToSend.append('posicao', formData.position || '');
+      formDataToSend.append('numeroPreferido', formData.number || '');
+      formDataToSend.append('estilo', formData.playStyle || '');
+      formDataToSend.append('cidadeEstado', formData.city || '');
+      formDataToSend.append('bairro', formData.neighborhood || '');
+
+      // Campos numéricos (mantendo os valores existentes se não foram alterados)
+      formDataToSend.append('pontos', formData.points || '0');
+      formDataToSend.append('vitorias', formData.victories || '0');
+      formDataToSend.append('jogos', formData.games || '0');
+      formDataToSend.append('reflexos', formData.reflexes || '0');
+      formDataToSend.append('defesa', formData.defense || '0');
+      formDataToSend.append('forca', formData.strength || '0');
+      formDataToSend.append('fisico', formData.physical || '0');
+      formDataToSend.append('estrelas', formData.stars || '0');
+      formDataToSend.append('geral', formData.overall || '0');
+
+      // Só adiciona a imagem se uma nova foi selecionada
+      if (formData.imageUri && !formData.imageUri.includes('http')) {
+        formDataToSend.append('fotoAvatar', {
+          uri: formData.imageUri,
+          type: 'image/jpeg',
+          name: 'avatar.jpg',
+        });
+      }
 
       const response = await axios.put(`${API_URL}/update`, formDataToSend, {
         headers: {
@@ -214,6 +229,7 @@ export default function ProfileEditor() {
 
       if (response.status === 200) {
         Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+        navigation.navigate('Profile'); // Navega para o perfil após sucesso
       } else {
         throw new Error('Falha ao atualizar perfil');
       }
@@ -258,6 +274,13 @@ export default function ProfileEditor() {
     scrollViewRef.current?.scrollTo({ x: pageIndex * width, animated: true });
   };
 
+  const handleImageError = () => {
+    setFormData(prev => ({
+      ...prev,
+      imageUri: DEFAULT_PROFILE_IMAGE
+    }));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
@@ -269,7 +292,11 @@ export default function ProfileEditor() {
         style={styles.keyboardAvoid}
       >
         <ScrollView style={styles.content}>
-          <ProfileImage imageUri={formData.imageUri} onPress={handleImagePicker} />
+          <ProfileImage 
+            imageUri={formData.imageUri} 
+            onPress={handleImagePicker}
+            onError={handleImageError}
+          />
           <ScrollView
             ref={scrollViewRef}
             horizontal

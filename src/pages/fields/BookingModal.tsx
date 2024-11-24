@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ChevronLeft, X } from 'lucide-react-native'
 
 const { height } = Dimensions.get('window')
-const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+const weekDays = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta']
 
 interface BookingModalProps {
   isVisible: boolean
