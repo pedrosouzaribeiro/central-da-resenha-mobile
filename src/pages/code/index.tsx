@@ -1,32 +1,57 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Animatable from 'react-native-animatable';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const CodeScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userData } = route.params; // Recebe os dados do usuário da tela de login
+  const { userData } = route.params;
   const [code, setCode] = useState(['', '', '', '', '', '']);
-  const inputs = Array(6).fill(null); // Adiciona array para armazenar as refs
+  const [loading, setLoading] = useState(false);
+  const inputs = useRef([]);
+
+  useEffect(() => {
+    inputs.current[0]?.focus();
+  }, []);
 
   const handleChangeText = (text: string, index: number) => {
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
 
-    // Avança para o próximo campo automaticamente
     if (text.length === 1 && index < 5) {
-      inputs[index + 1]?.focus();
+      inputs.current[index + 1]?.focus();
+    } else if (text.length === 0 && index > 0) {
+      inputs.current[index - 1]?.focus();
+    }
+
+    if (newCode.every(digit => digit !== '')) {
+      Keyboard.dismiss();
     }
   };
 
   const handleVerifyCode = async () => {
-    const verificationCode = parseInt(code.join(''), 10); // Junta os dígitos do código e converte para inteiro
+    setLoading(true);
+    const verificationCode = parseInt(code.join(''), 10);
     const dataToSend = {
       email: userData.email,
       password: userData.password,
-      codigoVerificacao: verificationCode, // Envia o código de verificação como número
+      codigoVerificacao: verificationCode,
     };
 
     try {
@@ -41,45 +66,93 @@ const CodeScreen = () => {
       const responseData = await response.json();
 
       if (response.ok) {
-        // Armazena o token e navega para a página Menu
         await AsyncStorage.setItem('userToken', responseData.token);
         navigation.navigate('Menu', { token: responseData.token });
       } else {
-        Alert.alert('Erro ao verificar código: ' + responseData.message);
+        Alert.alert('Erro', 'Código de verificação inválido. Tente novamente.');
       }
     } catch (error) {
       console.error('Erro ao verificar código:', error);
-      Alert.alert('Erro ao verificar código. Verifique sua conexão.');
+      Alert.alert('Erro', 'Falha ao verificar o código. Verifique sua conexão.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../../assets/BALL.png')} style={styles.image} />
-      <Text style={styles.text}>Digite o código enviado no e-mail.</Text>
-      <View style={styles.codeContainer}>
-        {code.map((digit, index) => (
-          <TextInput
-            key={index}
-            style={styles.input}
-            keyboardType="numeric"
-            maxLength={1}
-            onChangeText={(text) => handleChangeText(text, index)}
-            value={digit}
-            ref={(input) => {
-              if (input) {
-                inputs[index] = input;
-              }
-            }}
-          />
-        ))}
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={handleVerifyCode} style={styles.button}>
-          <Text style={styles.buttonText}>Verificar Código</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <LinearGradient
+        colors={['#000', '#111']}
+        style={styles.gradient}
+      >
+        <Animatable.View 
+          animation="bounceIn"
+          duration={1500}
+          style={styles.iconContainer}
+        >
+          <MaterialIcons name="verified-user" size={80} color="#4ECB71" />
+        </Animatable.View>
+
+        <Animatable.Text 
+          animation="fadeInUp"
+          delay={500}
+          style={styles.title}
+        >
+          Verificação
+        </Animatable.Text>
+
+        <Animatable.Text 
+          animation="fadeInUp"
+          delay={600}
+          style={styles.text}
+        >
+          Digite o código enviado para o seu e-mail
+        </Animatable.Text>
+
+        <Animatable.View 
+          animation="fadeInUp"
+          delay={700}
+          style={styles.codeContainer}
+        >
+          {code.map((digit, index) => (
+            <TextInput
+              key={index}
+              style={styles.input}
+              keyboardType="numeric"
+              maxLength={1}
+              onChangeText={(text) => handleChangeText(text, index)}
+              value={digit}
+              ref={el => inputs.current[index] = el}
+            />
+          ))}
+        </Animatable.View>
+
+        <Animatable.View 
+          animation="fadeInUp"
+          delay={800}
+          style={styles.buttonContainer}
+        >
+          <TouchableOpacity onPress={handleVerifyCode} disabled={loading}>
+            <LinearGradient
+              colors={['#4ECB71', '#3BA55D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.button}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <Text style={styles.buttonText}>Verificar Código</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animatable.View>
+
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -87,45 +160,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  gradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
   },
-  image: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
+  iconContainer: {
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4ECB71',
+    marginBottom: 10,
   },
   text: {
-    color: '#4ECB71',
-    fontSize: 18,
-    marginBottom: 20,
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 30,
+    textAlign: 'center',
   },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '80%',
+    maxWidth: 300,
+    marginBottom: 30,
   },
   input: {
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     color: '#FFF',
     fontSize: 24,
     textAlign: 'center',
-    width: 40,
-    height: 40,
-    borderRadius: 5,
+    width: 45,
+    height: 55,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4ECB71',
   },
   buttonContainer: {
     width: '80%',
-    marginTop: 20,
+    maxWidth: 300,
   },
   button: {
-    backgroundColor: '#4ECB71',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#1D4A2A',
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  resendText: {
+    color: '#fff',
+    marginTop: 20,
+  },
+  resendLink: {
+    color: '#4ECB71',
     fontWeight: 'bold',
   },
 });

@@ -13,6 +13,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   SafeAreaView,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,12 +23,11 @@ import axios from 'axios';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
 
-const { width } = Dimensions.get('window');
 const API_URL = 'http://168.138.151.78:3000/api/accountmanagement';
 const DEFAULT_PROFILE_IMAGE = 'http://168.138.151.78:3000/uploads/avatars/default/default.jpg';
 
-const InputField = ({ label, value, onChangeText, keyboardType = 'default', width = '100%' }) => (
-  <View style={[styles.inputContainer, { width }]}>
+const InputField = ({ label, value, onChangeText, keyboardType = 'default', style }) => (
+  <View style={[styles.inputContainer, style]}>
     <TextInput
       style={styles.input}
       placeholder={label}
@@ -55,41 +55,9 @@ const ProfileImage = ({ imageUri, onPress, onError }) => (
   </View>
 );
 
-const DeleteAccountModal = ({ visible, onClose, onDelete }) => (
-  <Modal
-    animationType="fade"
-    transparent
-    visible={visible}
-    onRequestClose={onClose}
-  >
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Apagar conta?</Text>
-        <Text style={styles.modalText}>
-          Esta ação não pode ser desfeita.
-        </Text>
-        <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={onClose}
-          >
-            <Text style={styles.modalButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.confirmDeleteButton]}
-            onPress={onDelete}
-          >
-            <Text style={styles.modalButtonText}>Confirmar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  </Modal>
-);
-
 export default function ProfileEditor() {
   const navigation = useNavigation();
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { width, height } = useWindowDimensions();
   const [currentPage, setCurrentPage] = useState(0);
   const scrollViewRef = useRef(null);
   const [formData, setFormData] = useState({
@@ -129,7 +97,7 @@ export default function ProfileEditor() {
       });
       
       const profileResponse = await axios.get(`${API_URL}/profile/${userResponse.data.idcliente}`);
-      const profileData = profileResponse.data.profile;
+      const profileData = profileResponse.data.profile || {};
 
       const imageUrl = profileData.fotoavatar 
         ? `http://168.138.151.78:3000/${profileData.fotoavatar}`
@@ -139,18 +107,18 @@ export default function ProfileEditor() {
         ...prevData,
         name: profileData.nickname || '',
         position: profileData.posicao || '',
-        number: profileData.numeropreferido?.toString() || '',
+        number: profileData.numeropreferido?.toString() || '0',
         playStyle: profileData.estilo || '',
         city: profileData.cidadeestado || '',
-        points: profileData.pontos?.toString() || '',
-        victories: profileData.vitorias?.toString() || '',
-        games: profileData.jogos?.toString() || '',
-        reflexes: profileData.reflexos?.toString() || '',
-        defense: profileData.defesa?.toString() || '',
-        strength: profileData.forca?.toString() || '',
-        physical: profileData.fisico?.toString() || '',
-        stars: profileData.estrelas?.toString() || '',
-        overall: profileData.geral?.toString() || '',
+        points: profileData.pontos?.toString() || '0',
+        victories: profileData.vitorias?.toString() || '0',
+        games: profileData.jogos?.toString() || '0',
+        reflexes: profileData.reflexos?.toString() || '0',
+        defense: profileData.defesa?.toString() || '0',
+        strength: profileData.forca?.toString() || '0',
+        physical: profileData.fisico?.toString() || '0',
+        stars: profileData.estrelas?.toString() || '0',
+        overall: profileData.geral?.toString() || '0',
         neighborhood: profileData.bairro || '',
         imageUri: imageUrl,
       }));
@@ -183,6 +151,27 @@ export default function ProfileEditor() {
 
   const handleConfirm = async () => {
     try {
+      // Validação dos campos obrigatórios
+      const requiredFields = {
+        position: 'Posição',
+        playStyle: 'Estilo de jogo',
+        city: 'Cidade',
+        neighborhood: 'Bairro'
+      };
+
+      const emptyFields = Object.entries(requiredFields)
+        .filter(([key]) => !formData[key]?.trim())
+        .map(([_, label]) => label);
+
+      if (emptyFields.length > 0) {
+        Alert.alert(
+          'Campos obrigatórios',
+          `Por favor, preencha os seguintes campos:\n\n${emptyFields.join('\n')}`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
         Alert.alert('Erro', 'Token não encontrado. Faça login novamente.');
@@ -194,11 +183,11 @@ export default function ProfileEditor() {
       
       // Campos obrigatórios (texto)
       formDataToSend.append('nickname', formData.name || '');
-      formDataToSend.append('posicao', formData.position || '');
+      formDataToSend.append('posicao', formData.position);
       formDataToSend.append('numeroPreferido', formData.number || '');
-      formDataToSend.append('estilo', formData.playStyle || '');
-      formDataToSend.append('cidadeEstado', formData.city || '');
-      formDataToSend.append('bairro', formData.neighborhood || '');
+      formDataToSend.append('estilo', formData.playStyle);
+      formDataToSend.append('cidadeEstado', formData.city);
+      formDataToSend.append('bairro', formData.neighborhood);
 
       // Campos numéricos (mantendo os valores existentes se não foram alterados)
       formDataToSend.append('pontos', formData.points || '0');
@@ -229,43 +218,13 @@ export default function ProfileEditor() {
 
       if (response.status === 200) {
         Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
-        navigation.navigate('Profile'); // Navega para o perfil após sucesso
+        navigation.navigate('Profile');
       } else {
         throw new Error('Falha ao atualizar perfil');
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
       Alert.alert('Erro', 'Não foi possível atualizar o perfil. Tente novamente.');
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      if (!token) {
-        Alert.alert('Erro', 'Token não encontrado. Faça login novamente.');
-        navigation.navigate('Login');
-        return;
-      }
-
-      const response = await axios.delete(`${API_URL}/delete-account`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { requestDelete: 1 },
-      });
-
-      if (response.status === 200) {
-        Alert.alert('Conta deletada', 'Sua conta foi deletada com sucesso');
-        await AsyncStorage.removeItem('userToken');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
-      } else {
-        throw new Error('Erro ao deletar conta');
-      }
-    } catch (error) {
-      console.error('Erro ao deletar conta:', error);
-      Alert.alert('Erro', 'Não foi possível deletar a conta. Tente novamente.');
     }
   };
 
@@ -281,6 +240,16 @@ export default function ProfileEditor() {
     }));
   };
 
+  const renderInputField = (label, field, keyboardType = 'default', customStyle = {}) => (
+    <InputField
+      label={label}
+      value={formData[field]}
+      onChangeText={(value) => updateField(field, value)}
+      keyboardType={keyboardType}
+      style={customStyle}
+    />
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
@@ -291,7 +260,10 @@ export default function ProfileEditor() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <ScrollView style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+        >
           <ProfileImage 
             imageUri={formData.imageUri} 
             onPress={handleImagePicker}
@@ -307,117 +279,38 @@ export default function ProfileEditor() {
               setCurrentPage(pageIndex);
             }}
           >
-            <View style={styles.page}>
+            <View style={[styles.page, { width }]}>
               <View style={styles.row}>
-                <InputField
-                  label="Nome"
-                  value={formData.name}
-                  onChangeText={(value) => updateField('name', value)}
-                  width="100%"
-                />
+                {renderInputField("Nome", "name", "default", { flex: 1 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Posição"
-                  value={formData.position}
-                  onChangeText={(value) => updateField('position', value)}
-                  width="48%"
-                />
-                <InputField
-                  label="Número"
-                  value={formData.number}
-                  onChangeText={(value) => updateField('number', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
+                {renderInputField("Posição", "position", "default", { flex: 1, marginRight: 8 })}
+                {renderInputField("Número", "number", "numeric", { flex: 1, marginLeft: 8 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Estilo de jogo"
-                  value={formData.playStyle}
-                  onChangeText={(value) => updateField('playStyle', value)}
-                  width="100%"
-                />
+                {renderInputField("Estilo de jogo", "playStyle", "default", { flex: 1 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Cidade"
-                  value={formData.city}
-                  onChangeText={(value) => updateField('city', value)}
-                  width="48%"
-                />
-                <InputField
-                  label="Bairro"
-                  value={formData.neighborhood}
-                  onChangeText={(value) => updateField('neighborhood', value)}
-                  width="48%"
-                />
+                {renderInputField("Cidade", "city", "default", { flex: 1, marginRight: 8 })}
+                {renderInputField("Bairro", "neighborhood", "default", { flex: 1, marginLeft: 8 })}
               </View>
             </View>
-            <View style={styles.page}>
+            <View style={[styles.page, { width }]}>
               <View style={styles.row}>
-                <InputField
-                  label="Pontos"
-                  value={formData.points}
-                  onChangeText={(value) => updateField('points', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
-                <InputField
-                  label="Vitórias"
-                  value={formData.victories}
-                  onChangeText={(value) => updateField('victories', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
+                {renderInputField("Pontos", "points", "numeric", { flex: 1, marginRight: 8 })}
+                {renderInputField("Vitórias", "victories", "numeric", { flex: 1, marginLeft: 8 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Reflexos"
-                  value={formData.reflexes}
-                  onChangeText={(value) => updateField('reflexes', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
-                <InputField
-                  label="Defesa"
-                  value={formData.defense}
-                  onChangeText={(value) => updateField('defense', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
+                {renderInputField("Reflexos", "reflexes", "numeric", { flex: 1, marginRight: 8 })}
+                {renderInputField("Defesa", "defense", "numeric", { flex: 1, marginLeft: 8 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Força"
-                  value={formData.strength}
-                  onChangeText={(value) => updateField('strength', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
-                <InputField
-                  label="Físico"
-                  value={formData.physical}
-                  onChangeText={(value) => updateField('physical', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
+                {renderInputField("Força", "strength", "numeric", { flex: 1, marginRight: 8 })}
+                {renderInputField("Físico", "physical", "numeric", { flex: 1, marginLeft: 8 })}
               </View>
               <View style={styles.row}>
-                <InputField
-                  label="Estrelas"
-                  value={formData.stars}
-                  onChangeText={(value) => updateField('stars', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
-                <InputField
-                  label="Geral"
-                  value={formData.overall}
-                  onChangeText={(value) => updateField('overall', value)}
-                  keyboardType="numeric"
-                  width="48%"
-                />
+                {renderInputField("Estrelas", "stars", "numeric", { flex: 1, marginRight: 8 })}
+                {renderInputField("Geral", "overall", "numeric", { flex: 1, marginLeft: 8 })}
               </View>
             </View>
           </ScrollView>
@@ -432,23 +325,17 @@ export default function ProfileEditor() {
               onPress={() => handlePageChange(1)}
             />
           </View>
+
+          <View style={styles.buttonWrapper}>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmButtonText}>Confirmar edições</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <View style={styles.buttonWrapper}>
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.confirmButtonText}>Confirmar edições</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => setShowDeleteModal(true)}
-        >
-          <Text style={styles.deleteButtonText}>Apagar conta</Text>
-        </TouchableOpacity>
-      </View>
 
       <View style={styles.footerContainer}>
         <Footer />
@@ -474,33 +361,27 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     paddingTop: 80,
+    paddingBottom: 100,
   },
   page: {
-    width: width,
-    paddingHorizontal: 20,
+    paddingHorizontal: '5%',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: '4%',
   },
   profileSection: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: '5%',
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    borderWidth: 3,
-    borderColor: '#4ECB71',
-  },
-  defaultProfileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#333',
     borderWidth: 3,
     borderColor: '#4ECB71',
   },
@@ -518,6 +399,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#212121',
     borderRadius: 12,
     paddingRight: 12,
+    marginBottom: '2%',
   },
   input: {
     flex: 1,
@@ -528,8 +410,8 @@ const styles = StyleSheet.create({
   pageIndicator: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: '5%',
+    marginBottom: '5%',
   },
   pageButton: {
     width: 10,
@@ -542,35 +424,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#4ECB71',
   },
   buttonWrapper: {
-    paddingHorizontal: 20,
-    paddingBottom: 5,
+    paddingHorizontal: '5%',
+    paddingBottom: '5%',
     backgroundColor: '#000',
-    position: 'absolute',
-    bottom: 155,
-    left: 0,
-    right: 0,
-    zIndex: 2,
   },
   confirmButton: {
     backgroundColor: '#4ECB71',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: '2%',
   },
   confirmButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  deleteButton: {
-    backgroundColor: '#CB4E4E',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  deleteButtonText: {
     color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
@@ -580,53 +445,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#212121',
-    borderRadius: 16,
-    padding: 24,
-    width: '80%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalText: {
-    fontSize: 16,
-    color: '#999',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginHorizontal: 8,
-  },
-  cancelButton: {
-    backgroundColor: '#333',
-  },
-  confirmDeleteButton: {
-    backgroundColor: '#CB4E4E',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });

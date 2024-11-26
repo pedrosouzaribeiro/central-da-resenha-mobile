@@ -16,7 +16,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ChevronLeft, X } from 'lucide-react-native'
 
 const { height } = Dimensions.get('window')
-const weekDays = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta']
+const weekDays = [
+  { display: 'Segunda', value: 'segunda' },
+  { display: 'Terça', value: 'terca' },
+  { display: 'Quarta', value: 'quarta' },
+  { display: 'Quinta', value: 'quinta' },
+  { display: 'Sexta', value: 'sexta' }
+];
 
 interface BookingModalProps {
   isVisible: boolean
@@ -25,25 +31,34 @@ interface BookingModalProps {
 }
 
 export default function BookingModal({ isVisible, onClose, fieldData }: BookingModalProps) {
-  const [selectedDay, setSelectedDay] = useState(weekDays[0])
+  const [selectedDay, setSelectedDay] = useState(weekDays[0].value)
   const [peopleCount, setPeopleCount] = useState('')
   const [selectedField, setSelectedField] = useState(null)
   const [selectedHorarios, setSelectedHorarios] = useState<string[]>([])
-  const [animation] = useState(new Animated.Value(height))
+  const [animation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     if (isVisible) {
       Animated.spring(animation, {
-        toValue: height * 2/3, // Alterado de height / 2 para height * 2/3
-        useNativeDriver: false,
-      }).start()
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 8
+      }).start();
     } else {
       Animated.spring(animation, {
-        toValue: height,
-        useNativeDriver: false,
-      }).start()
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 8
+      }).start();
     }
-  }, [isVisible])
+  }, [isVisible]);
+
+  const translateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [height, 0]
+  });
 
   const handleFieldSelect = (field) => {
     setSelectedField(field)
@@ -82,7 +97,7 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
       const bookingData = {
         idCampo: selectedField.id,
         idEmpresa: selectedField.idEmpresa || 1,
-        horario: { [selectedDay.toLowerCase()]: selectedHorarios },
+        horario: { [selectedDay]: selectedHorarios },
         quantidadePessoas: parseInt(peopleCount),
         semana: getCurrentWeek()
       }
@@ -110,11 +125,11 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
   }
 
   const renderHorarios = () => {
-    if (!selectedField?.horarios?.[selectedDay.toLowerCase()]) return null
+    if (!selectedField?.horarios?.[selectedDay]) return null
 
     return (
       <View style={styles.horariosGrid}>
-        {selectedField.horarios[selectedDay.toLowerCase()].map((time: string, index: number) => (
+        {selectedField.horarios[selectedDay].map((time: string, index: number) => (
           <TouchableOpacity 
             key={index} 
             style={[styles.horarioButton, selectedHorarios.includes(time) && styles.selectedHorarioButton]}
@@ -177,12 +192,12 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
         >
           {weekDays.map((day) => (
             <TouchableOpacity
-              key={day}
-              style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
-              onPress={() => setSelectedDay(day)}
+              key={day.value}
+              style={[styles.dayButton, selectedDay === day.value && styles.selectedDayButton]}
+              onPress={() => setSelectedDay(day.value)}
             >
-              <Text style={[styles.dayButtonText, selectedDay === day && styles.selectedDayButtonText]}>
-                {day}
+              <Text style={[styles.dayButtonText, selectedDay === day.value && styles.selectedDayButtonText]}>
+                {day.display}
               </Text>
             </TouchableOpacity>
           ))}
@@ -217,23 +232,41 @@ export default function BookingModal({ isVisible, onClose, fieldData }: BookingM
       onRequestClose={onClose}
       animationType="none"
     >
-      <View style={styles.overlay} />
-      <View style={styles.modalContainer}>
-        <Animated.View style={[styles.modalContent, { height: animation }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={selectedField ? handleBack : onClose} style={styles.backButton}>
-              {selectedField ? <ChevronLeft color="#4ECB71" size={24} /> : <X color="#4ECB71" size={24} />}
+      <TouchableOpacity 
+        style={styles.overlay} 
+        activeOpacity={1} 
+        onPress={onClose}
+      >
+        <View style={styles.modalContainer}>
+          <Animated.View 
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ translateY }]
+              }
+            ]}
+          >
+            <TouchableOpacity 
+              activeOpacity={1} 
+              onPress={(e) => e.stopPropagation()} 
+              style={{ flex: 1 }}
+            >
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={selectedField ? handleBack : onClose} style={styles.backButton}>
+                  {selectedField ? <ChevronLeft color="#4ECB71" size={24} /> : <X color="#4ECB71" size={24} />}
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>
+                  {selectedField ? 'Agendar Horário' : 'Escolha um Campo'}
+                </Text>
+              </View>
+              
+              <View style={styles.modalBody}>
+                {selectedField ? renderBookingForm() : renderFieldsList()}
+              </View>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
-              {selectedField ? 'Agendar Horário' : 'Escolha um Campo'}
-            </Text>
-          </View>
-          
-          <View style={styles.modalBody}>
-            {selectedField ? renderBookingForm() : renderFieldsList()}
-          </View>
-        </Animated.View>
-      </View>
+          </Animated.View>
+        </View>
+      </TouchableOpacity>
     </Modal>
   )
 }
@@ -248,7 +281,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
-    minHeight: '66%', // Adicionado para garantir que o modal ocupe pelo menos 2/3 da tela
+    height: height * 2/3,
   },
   modalHeader: {
     flexDirection: 'row',

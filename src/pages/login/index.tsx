@@ -5,16 +5,20 @@ import {
   TextInput, 
   TouchableOpacity, 
   StyleSheet, 
-  ImageBackground, 
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Animatable from 'react-native-animatable';
+
+const { width, height } = Dimensions.get('window');
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -45,7 +49,6 @@ export default function Login() {
     const userData = {
       email,
       password,
-      // codigoVerificacao: null,
     };
 
     try {
@@ -67,12 +70,12 @@ export default function Login() {
         if (responseData.message.includes("Código de verificação incorreto")) {
           navigation.navigate('Code', { userData });
         } else {
-          Alert.alert('Erro ao fazer login: ' + responseData.message);
+          Alert.alert('Erro ao fazer login', responseData.message);
         }
       }
     } catch (error) {
       console.error('Erro ao fazer login:', error);
-      Alert.alert('Erro ao fazer login. Verifique sua conexão.');
+      Alert.alert('Erro ao fazer login', 'Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -81,117 +84,170 @@ export default function Login() {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
+      style={styles.container}
     >
-      <ScrollView 
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+      <LinearGradient
+        colors={['#000', '#111']}
+        style={styles.gradient}
       >
-        <View style={styles.iconPlaceholder}>
-          <ImageBackground
-            source={require('../../assets/BALL.png')}
-            style={{
-              width: '100%',
-              height: '100%',
-              marginTop: -50
-            }}
-          />
-        </View>
-        
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="email" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            placeholderTextColor="#666"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            returnKeyType="next"
-          />
-        </View>
-        
-        <View style={styles.inputContainer}>
-          <MaterialIcons name="key" size={24} color="#666" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            placeholderTextColor="#666"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-            <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
-          </TouchableOpacity>
-        </View>
-        
-        <TouchableOpacity onPress={handleLogin} style={styles.button} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#1D4A2A" />
-          ) : (
-            <Text style={styles.buttonText}>Continuar</Text>
-          )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)}>
-          <Text style={styles.createAccount}>Criar uma conta</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animatable.View 
+            animation="pulse" 
+            easing="ease-out" 
+            iterationCount="infinite"
+            style={styles.logoContainer}
+          >
+            <Animatable.Image
+              source={require('../../assets/BALL.png')}
+              style={styles.logo}
+              animation="bounceIn"
+            />
+          </Animatable.View>
+          
+          <Animatable.Text 
+            animation="fadeInDown" 
+            style={styles.title}
+          >
+            Central da Resenha
+          </Animatable.Text>
+
+          <Animatable.View animation="fadeInUp" delay={300} style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <MaterialIcons name="email" size={24} color="#4ECB71" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="E-mail"
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <MaterialIcons name="lock" size={24} color="#4ECB71" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                placeholderTextColor="#666"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#4ECB71" />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity onPress={handleLogin} disabled={loading}>
+              <LinearGradient
+                colors={['#4ECB71', '#3BA55D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <Text style={styles.buttonText}>Entrar</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp' as never)} style={styles.createAccountContainer}>
+              <Text style={styles.createAccount}>Não tem uma conta? </Text>
+              <Text style={styles.createAccountBold}>Criar agora</Text>
+            </TouchableOpacity>
+          </Animatable.View>
+        </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: '#000',
+  },
+  gradient: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
-  iconPlaceholder: {
-    width: 100,
-    height: 100
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4ECB71',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
-    width: '100%',
-    backgroundColor: '#222',
-    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 10,
+    paddingHorizontal: 15,
   },
   inputIcon: {
-    marginLeft: 10,
+    marginRight: 10,
   },
   input: {
+    flex: 1,
     color: '#fff',
     padding: 15,
     fontSize: 16,
-    flex: 1,
   },
   eyeIcon: {
-    marginRight: 10,
+    padding: 10,
   },
   button: {
-    backgroundColor: '#4ECB71',
     padding: 15,
-    borderRadius: 5,
-    width: '100%',
+    borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 10,
   },
   buttonText: {
-    color: '#1D4A2A',
+    color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
   },
+  createAccountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
   createAccount: {
     color: '#FFFFFF',
-    fontWeight: '100',
+    fontSize: 16,
+  },
+  createAccountBold: {
+    color: '#4ECB71',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

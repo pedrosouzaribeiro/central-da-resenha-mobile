@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import { useNavigation } from '@react-navigation/native';
+import Header from '../../components/header';
 
 const { width, height } = Dimensions.get('window');
 
@@ -112,22 +113,15 @@ export default function LineupScreen() {
       resizeMode="cover"
     >
       <View style={styles.overlay}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate('Menu')}>
-            <Text style={styles.headerTitle}>Central da Resenha</Text>
-          </TouchableOpacity>
-          <MaterialCommunityIcons name="soccer" size={24} color="#4CAF50" />
-          <View style={styles.profileIcon}>
-            <MaterialCommunityIcons name="account" size={24} color="#fff" />
-          </View>
-        </View>
+        <Header />
         <View style={styles.scoreBoard}>
           <View style={styles.teamContainer}>
             <View style={styles.teamNameContainer}>
               <TextInput
                 style={styles.teamName}
                 value={homeTeam}
-                onChangeText={setHomeTeam}
+                onChangeText={(text) => setHomeTeam(text.toUpperCase().slice(0, 3))}
+                maxLength={3}
               />
             </View>
             <Text style={styles.score}>{homeScore}</Text>
@@ -147,30 +141,27 @@ export default function LineupScreen() {
               <TextInput
                 style={styles.teamName}
                 value={awayTeam}
-                onChangeText={setAwayTeam}
+                onChangeText={(text) => setAwayTeam(text.toUpperCase().slice(0, 3))}
+                maxLength={3}
               />
             </View>
           </View>
         </View>
         <View style={styles.field}>
           {positions.map((position) => (
-            <View
+            <Pressable
               key={position.id}
-              style={[
-                styles.playerPosition,
-                { left: position.x, top: position.y },
-              ]}
+              style={[styles.playerPosition, { left: position.x, top: position.y }]}
+              onPress={() => handlePlayerPress(position.id)}
             >
               <Text style={styles.positionLabel}>{position.label}</Text>
               <View style={styles.playerIconBackground}>
                 <MaterialCommunityIcons name="tshirt-crew" size={24} color="#4CAF50" />
               </View>
-              <Pressable onPress={() => handlePlayerPress(position.id)}>
-                <Text style={styles.playerName}>
-                  {players[position.id] || 'Jogador'}
-                </Text>
-              </Pressable>
-            </View>
+              <Text style={styles.playerName}>
+                {players[position.id] || 'Jogador'}
+              </Text>
+            </Pressable>
           ))}
         </View>
         {!isGameStarted ? (
@@ -227,26 +218,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  headerTitle: {
-    color: '#4CAF50',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#4CAF50',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scoreBoard: {
     flexDirection: 'row',
@@ -351,10 +322,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'red',
   },
   pauseButton: {
-    backgroundColor: 'yellow',
+    backgroundColor: '#fcb72c',
   },
   controlButtonText: {
-    color: '#fff',
+    color: '#f5f5f5',
     fontWeight: 'bold',
   },
   modal: {

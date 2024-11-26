@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Animatable from 'react-native-animatable';
+
+const { width } = Dimensions.get('window');
 
 const formatDate = (text: string) => {
-  // Remove tudo que não for número
   const numbers = text.replace(/[^\d]/g, '');
-  
-  // Aplica a máscara DD/MM/AAAA
   if (numbers.length <= 2) return numbers;
   if (numbers.length <= 4) return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
   return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
@@ -26,30 +38,53 @@ const validateDate = (date: string) => {
   return true;
 };
 
-export default function Component() {
+const InputField = ({ icon, placeholder, value, onChangeText, secureTextEntry, keyboardType = 'default' }) => (
+  <Animatable.View animation="fadeInUp" duration={1000} style={styles.inputContainer}>
+    <MaterialIcons name={icon} size={24} color="#4ECB71" style={styles.inputIcon} />
+    <TextInput
+      style={styles.input}
+      placeholder={placeholder}
+      placeholderTextColor="#666"
+      value={value}
+      onChangeText={onChangeText}
+      secureTextEntry={secureTextEntry}
+      keyboardType={keyboardType}
+      autoCapitalize="none"
+    />
+  </Animatable.View>
+);
+
+export default function RegistrationScreen() {
   const [fullName, setFullName] = useState('');
-  const [nickname, setNickname] = useState(''); // Novo estado para nickname
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [dataNasc, setDataNasc] = useState(''); // Novo estado para data de nascimento
+  const [dataNasc, setDataNasc] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      Alert.alert('As senhas não coincidem!');
+      Alert.alert('Erro', 'As senhas não coincidem!');
       return;
     }
 
+    if (!validateDate(dataNasc)) {
+      Alert.alert('Erro', 'Data de nascimento inválida!');
+      return;
+    }
+
+    const [day, month, year] = dataNasc.split('/');
+    const formattedDate = `${year}-${month}-${day}`;
+
     const userData = {
-      email: email, // Certifique-se de que o email está correto
-      password: password, // A senha deve ser a que o usuário digitou
-      nivelUsuario: 1, // Padrão
-      nickname: nickname, // O nickname que o usuário digitou
-      nomeReal: fullName, // O nome completo que o usuário digitou
-      dataNasc: dataNasc, // A data de nascimento que o usuário digitou
+      email,
+      password,
+      nivelUsuario: 1,
+      nickname,
+      nomeReal: fullName,
+      dataNasc: formattedDate,
     };
 
     try {
@@ -58,34 +93,22 @@ export default function Component() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userData), // Converte o objeto em JSON
+        body: JSON.stringify(userData),
       });
 
-      const textResponse = await response.text(); // Captura a resposta como texto
-      console.log('Resposta da API:', textResponse); // Log da resposta
+      const textResponse = await response.text();
 
       if (response.ok) {
-        const responseData = JSON.parse(textResponse); // Supondo que a resposta seja um JSON
-        const token = responseData.token; // Extraia o token da resposta
-
-        // Armazene o token no AsyncStorage
+        const responseData = JSON.parse(textResponse);
+        const token = responseData.token;
         await AsyncStorage.setItem('userToken', token);
-
-        // Navegue para a tela "Menu"
-        navigation.navigate('Menu'); // Certifique-se de que "Menu" é o nome correto da sua tela
+        navigation.navigate('Menu');
       } else {
-        Alert.alert('Erro ao registrar usuário: ' + textResponse); // Mostra a resposta de erro
+        Alert.alert('Erro', 'Falha ao registrar usuário: ' + textResponse);
       }
     } catch (error) {
-      console.error('Error registering user:', error);
-      Alert.alert('Erro ao registrar usuário: ' + error.message);
-    }
-  };
-
-  const handleDateChange = (text: string) => {
-    const formatted = formatDate(text);
-    if (formatted.length <= 10) { // Limita ao tamanho máximo DD/MM/AAAA
-      setDataNasc(formatted);
+      console.error('Erro ao registrar usuário:', error);
+      Alert.alert('Erro', 'Falha ao registrar usuário: ' + error.message);
     }
   };
 
@@ -93,102 +116,83 @@ export default function Component() {
     <KeyboardAvoidingView 
       style={styles.container} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0} // Ajuste conforme necessário
     >
-      <View style={styles.iconPlaceholder}>
-        <ImageBackground
-          source={require('../../assets/BALL.png')}
-          style={{
-            width: '100%',
-            height: '100%',
-            marginTop: -50
-          }}
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="person" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Nome Completo"
-          placeholderTextColor="#666"
-          value={fullName}
-          onChangeText={setFullName}
-          autoCapitalize="words"
-        />
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <LinearGradient
+          colors={['#000', '#111']}
+          style={styles.gradient}
+        >
+          <Animatable.Image
+            animation="pulse"
+            easing="ease-out"
+            iterationCount="infinite"
+            source={require('../../assets/BALL.png')}
+            style={styles.logo}
+          />
+          <Animatable.Text animation="fadeInDown" style={styles.title}>Crie sua conta</Animatable.Text>
+          
+          <InputField
+            icon="person"
+            placeholder="Nome Completo"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <InputField
+            icon="person-outline"
+            placeholder="Nickname"
+            value={nickname}
+            onChangeText={setNickname}
+          />
+          <InputField
+            icon="email"
+            placeholder="E-mail"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <InputField
+            icon="lock"
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+          />
+          <InputField
+            icon="lock-outline"
+            placeholder="Confirmar Senha"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showPassword}
+          />
+          <InputField
+            icon="calendar-today"
+            placeholder="Data de Nascimento (DD/MM/AAAA)"
+            value={dataNasc}
+            onChangeText={(text) => setDataNasc(formatDate(text))}
+            keyboardType="numeric"
+          />
+          
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordButton}>
+            <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#4ECB71" />
+            <Text style={styles.showPasswordText}>{showPassword ? 'Ocultar Senha' : 'Mostrar Senha'}</Text>
+          </TouchableOpacity>
 
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="person" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Nickname"
-          placeholderTextColor="#666"
-          value={nickname} // Novo campo para nickname
-          onChangeText={setNickname}
-          autoCapitalize="words"
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="email" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={[styles.input, { paddingLeft:16 }]}
-          placeholder="E-mail"
-          placeholderTextColor="#666"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="key" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={[styles.input, { paddingLeft: 16 }]}
-          placeholder="Senha"
-          placeholderTextColor="#666"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-          <MaterialIcons name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="key" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={[styles.input, { paddingLeft: 16 }]}
-          placeholder="Confirmar Senha"
-          placeholderTextColor="#666"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-        />
-        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-          <MaterialIcons name={showConfirmPassword ? 'visibility' : 'visibility-off'} size={24} color="gray" />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <LinearGradient
+              colors={['#4ECB71', '#3BA55D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            >
+              <Text style={styles.buttonText}>Registrar</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-      <View style={styles.inputContainer}>
-        <MaterialIcons name="calendar-today" size={24} color="#666" style={styles.inputIcon} />
-        <TextInput
-          style={[styles.input, { paddingLeft: 16 }]}
-          placeholder="Data de Nascimento (DD/MM/AAAA)"
-          placeholderTextColor="#666"
-          value={dataNasc}
-          onChangeText={handleDateChange}
-          keyboardType="numeric"
-          maxLength={10}
-        />
-      </View>
-      
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Registrar</Text>
-      </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginLink}>Já tem uma conta? Faça login</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -197,24 +201,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  gradient: {
+    flex: 1,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
-  iconPlaceholder: {
+  logo: {
     width: 100,
-    height: 100
+    height: 100,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4ECB71',
+    marginBottom: 30,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     width: '100%',
-    backgroundColor: '#222',
-    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 10,
+    paddingHorizontal: 15,
   },
   inputIcon: {
-    marginLeft: 10,
+    marginRight: 10,
   },
   input: {
     color: '#fff',
@@ -222,20 +241,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
-  eyeIcon: {
-    marginRight: 10,
-  },
-  button: {
-    backgroundColor: '#4ECB71',
-    padding: 15,
-    borderRadius: 5,
-    width: '100%',
+  showPasswordButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
+  showPasswordText: {
+    color: '#4ECB71',
+    marginLeft: 10,
+  },
+  button: {
+    width: '100%',
+    marginBottom: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  buttonGradient: {
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
   buttonText: {
-    color: '#1D4A2A',
+    color: '#000',
     fontSize: 18,
-    fontWeight: '800', // Colocar extrabold 
+    fontWeight: 'bold',
+  },
+  loginLink: {
+    color: '#4ECB71',
+    fontSize: 16,
   },
 });

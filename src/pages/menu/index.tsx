@@ -11,7 +11,7 @@ const menuItems = [
   { icon: 'soccer-field', title: 'Reservar um campo', description: 'Reserve um horário no seu campo favorito.', route: 'Fields' },
   { icon: 'calendar', title: 'Meus agendamentos', description: 'Ver o histórico dos seus agendamentos.', route: 'Agendamentos' },
   { icon: 'account-group', title: 'Organizar um time', description: 'Reúna os times para aquele fut.', route: 'Teams' },
-  { icon: 'account-plus-outline', title: 'Adicionar um amigo', description: 'Convide amigos para jogos.', route: 'AddFriend' },
+  { icon: 'account-edit', title: 'Ver seu perfil', description: 'Veja e edite o seu perfil de usuário.', route: 'Profile' },
 ]
 
 export default function MenuScreen() {

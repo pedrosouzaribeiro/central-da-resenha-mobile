@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   agendamentoCard: {
     backgroundColor: '#1E1E1E',

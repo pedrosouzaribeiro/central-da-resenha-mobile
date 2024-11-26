@@ -1,48 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, SafeAreaView } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import axios from 'axios';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Header() {
   const navigation = useNavigation();
+  const route = useRoute();
   const [userName, setUserName] = useState('usuario');
   const [position, setPosition] = useState('');
-  const [clientId, setClientId] = useState(null); // Novo estado para armazenar o ID do cliente
+  const [clientId, setClientId] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Recupera o token do AsyncStorage
         const token = await AsyncStorage.getItem('userToken');
         if (!token) {
           Alert.alert('Token não encontrado. Faça login novamente.');
           return;
         }
 
-        // Primeira requisição para obter o perfil do usuário
         const response = await axios.get('http://168.138.151.78:3000/api/accountmanagement/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`, // Usa o token recuperado
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Atualiza o estado com os dados do usuário
-        setClientId(response.data.idcliente); // Armazena o ID do cliente
+        setClientId(response.data.idcliente);
 
-
-        // Segunda requisição para obter o nickname usando o ID do cliente
         if (response.data.idcliente) {
           const profileResponse = await axios.get(`http://168.138.151.78:3000/api/accountmanagement/profile/${response.data.idcliente}`, {
-            headers: {
-              Authorization: `Bearer ${token}`, // Usa o token
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
 
           setPosition(profileResponse.data.profile.posicao || '');
-          // Atualiza o estado com o nickname
           setUserName(profileResponse.data.profile.nickname || 'usuario');
         }
       } catch (error) {
@@ -55,75 +45,114 @@ export default function Header() {
   }, []);
 
   return (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Icon name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
-      <Text style={styles.title} onPress={() => navigation.navigate('Menu' as never)}>Central da Resenha</Text>
-      <View style={styles.profileContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.profileNameContainer}>
-          <Text style={styles.profileName}>{userName}</Text>
-          {position ? <Text style={styles.profileRole}>{position}</Text> : <Text style={styles.profileRole}>N/A</Text>}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)}>
-          <FontAwesome6 name="circle-user" size={25} color="#666" style={styles.icon} />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <View style={styles.leftSection}>
+          {route.name !== 'Menu' && (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#4ecb71" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => navigation.navigate('Menu' as never)} style={styles.titleContainer}>
+            <Image
+              source={{ uri: 'https://i.imgur.com/EMWvwxY.png' }}
+              style={styles.logo}
+            />
+            <View>
+              <Text style={styles.titleTop}>Central da</Text>
+              <Text style={styles.titleBottom}>Resenha</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Profile' as never)} 
+          style={styles.profileContainer}
+          activeOpacity={0.7}
+        >
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{userName}</Text>
+            <Text style={styles.profileRole}>{position || 'N/A'}</Text>
+          </View>
+          <View style={styles.avatarContainer}>
+            <FontAwesome6 name="user" size={18} color="#4ecb71" />
+          </View>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: '#000',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#000',
     paddingVertical: 10,
-    paddingHorizontal: 35,
-    width: '100%',
-    top: 0,
-    zIndex: 1,
-    marginTop: 20,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backButton: {
-    padding: 5,
-    backgroundColor: "#202020",
-    borderRadius: 5,
-    marginLeft: -15,
+    padding: 8,
+    marginRight: 10,
   },
-  title: {
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 30,
+    height: 30,
+    marginRight: 8,
+  },
+  titleTop: {
     fontFamily: 'montserrat',
     fontWeight: '700',
-    fontSize: 15,
-    marginLeft: -50,
-    width: "40%",
+    fontSize: 14,
     color: '#4ecb71',
-    position: 'absolute',
-    left: 120,
+    lineHeight: 16,
+  },
+  titleBottom: {
+    fontFamily: 'montserrat',
+    fontWeight: '700',
+    fontSize: 14,
+    color: '#4ecb71',
+    lineHeight: 16,
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
   },
-  profileNameContainer: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+  profileInfo: {
+    alignItems: 'flex-end',
+    marginRight: 8,
   },
   profileName: {
     fontFamily: 'montserrat',
-    fontWeight: 'bold',
+    fontWeight: '700',
     fontSize: 14,
     color: '#fff',
   },
   profileRole: {
     fontFamily: 'montserrat',
     fontSize: 12,
-    color: '#888',
+    color: '#4ecb71',
   },
-  icon: {
-    color: '#f5f5f5',
-    marginLeft: 8,
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(78, 203, 113, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
