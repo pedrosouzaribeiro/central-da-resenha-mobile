@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Central da Resenha",
-    "slug": "Central da Resenha",
+    "slug": "central-da-resenha",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "src/assets/BALL.png",
@@ -11,20 +11,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "ios": {
-      "supportsTablet": true,
-      "backgroundColor": "#000000"
-    },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "src/assets/BALL.png",
         "backgroundColor": "#000000"
       },
-      "softwareKeyboardLayoutMode": "pan",
-      "navigationBarColor": "#000000"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "package": "com.centraldaresenha",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "plugins": [
       "expo-font"
@@ -44,6 +41,12 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "093781dd-159d-4859-9544-f1a4250bf40d"
+      }
+    },
+    "owner": "yleo"
   }
 }

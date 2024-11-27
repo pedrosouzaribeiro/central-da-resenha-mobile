@@ -1,0 +1,17 @@
+{
+  "cli": {
+    "version": ">= 13.4.2",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "distribution": "internal",
+        "developmentClient": true,
+        "gradleCommand": ":app:assembleDebug"
+      }
+    },
+    "production": {}
+  }
+}
